@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="{ mobileMenu: false, cartCount: 3, searchOpen: false, activeCategory: 'সব', scrolled: false }" 
+      @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>কৃষি বাজার — দেশের কৃষির অনলাইন হাট</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            earth: { 50:'#fdf8f0', 100:'#f5e8d0', 200:'#e8cc9e', 300:'#d9a96a', 400:'#c98840', 500:'#b8692a', 600:'#9a501e', 700:'#7d3c18', 800:'#612e14', 900:'#4a2410' },
+            leaf:  { 50:'#f0faf0', 100:'#d6f5d6', 200:'#a8e8a8', 300:'#74d474', 400:'#4ab94a', 500:'#2e9c2e', 600:'#1e7e1e', 700:'#166116', 800:'#104810', 900:'#0a300a' },
+            sky:   { 50:'#eef8ff', 100:'#d4edff', 200:'#a3d8ff', 300:'#60bfff', 400:'#2aa5ff', 500:'#0088ee', 600:'#006bcc', 700:'#0052a3', 800:'#003d7a', 900:'#002952' },
+            cream: '#fdf6e3',
+            bark:  '#6b4c2a',
+          },
+          fontFamily: {
+            bangla: ['Hind Siliguri', 'sans-serif'],
+            serif:  ['Noto Serif Bengali', 'serif'],
+          },
+          backgroundImage: {
+            'grain': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E\")",
+          },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'float2': 'float 8s ease-in-out infinite 1s',
+            'marquee': 'marquee 30s linear infinite',
+            'fade-in': 'fadeIn 0.6s ease forwards',
+            'slide-up': 'slideUp 0.5s ease forwards',
+          },
+          keyframes: {
+            float: { '0%,100%': {transform:'translateY(0)'}, '50%': {transform:'translateY(-12px)'} },
+            marquee: { '0%': {transform:'translateX(0)'}, '100%': {transform:'translateX(-50%)'} },
+            fadeIn: { from:{opacity:0}, to:{opacity:1} },
+            slideUp: { from:{opacity:0,transform:'translateY(20px)'}, to:{opacity:1,transform:'translateY(0)'} },
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { font-family: 'Hind Siliguri', sans-serif; }
+    h1, h2, h3 { font-family: 'Noto Serif Bengali', serif; }
+    body { background-color: #fdf6e3; }
+
+    .hero-bg {
+      background: linear-gradient(135deg, #0a300a 0%, #1e7e1e 40%, #2e9c2e 70%, #4ab94a 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero-wave {
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+    }
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .card-hover:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    .badge-ribbon {
+      position: absolute;
+      top: 12px; right: -6px;
+      background: #b8692a;
+      color: white;
+      font-size: 11px;
+      padding: 2px 10px 2px 8px;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 6px 50%);
+    }
+    .nav-glass {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .marquee-inner {
+      display: flex;
+      white-space: nowrap;
+      animation: marquee 28s linear infinite;
+    }
+    .section-divider {
+      width: 60px; height: 4px;
+      background: linear-gradient(90deg, #2e9c2e, #b8692a);
+      border-radius: 2px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #1e7e1e, #2e9c2e);
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #166116, #1e7e1e);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(46,156,46,0.4);
+    }
+    .btn-earth {
+      background: linear-gradient(135deg, #9a501e, #b8692a);
+      transition: all 0.3s ease;
+    }
+    .btn-earth:hover {
+      background: linear-gradient(135deg, #7d3c18, #9a501e);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(184,105,42,0.4);
+    }
+    .product-img-wrap {
+      background: linear-gradient(145deg, #f0faf0, #d6f5d6);
+      overflow: hidden;
+    }
+    .category-pill.active {
+      background: #1e7e1e;
+      color: white;
+    }
+    .floating-leaf {
+      position: absolute;
+      opacity: 0.08;
+      font-size: 80px;
+      pointer-events: none;
+    }
+    input[type=search]::-webkit-search-cancel-button { display: none; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0faf0; }
+    ::-webkit-scrollbar-thumb { background: #4ab94a; border-radius: 3px; }
+
+    @keyframes growBar {
+      from { width: 0; }
+      to { width: var(--w); }
+    }
+    .stat-bar { animation: growBar 1.5s ease forwards; }
+  </style>
+</head>
+
+<body class="overflow-x-hidden">
+
+<!-- ══════════════════════════════════════
+     TOP ANNOUNCEMENT BAR
+════════════════════════════════════════ -->
+<div class="bg-leaf-800 text-white text-sm py-2 overflow-hidden relative">
+  <div class="marquee-inner gap-16">
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">🌱 ১০০% জৈব ও বিষমুক্ত পণ্য</span>
+    <span class="px-8">🐔 তাজা দেশি মুরগি, মাছ ও শাকসবজি</span>
+    <span class="px-8">🚜 কৃষি যন্ত্রপাতি সুলভ মূল্যে</span>
+    <span class="px-8">📞 হেল্পলাইন: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">💳 নিরাপদ অনলাইন পেমেন্ট</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">🌱 ১০০% জৈব ও বিষমুক্ত পণ্য</span>
+    <span class="px-8">🐔 তাজা দেশি মুরগি, মাছ ও শাকসবজি</span>
+    <span class="px-8">🚜 কৃষি যন্ত্রপাতি সুলভ মূল্যে</span>
+    <span class="px-8">📞 হেল্পলাইন: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">💳 নিরাপদ অনলাইন পেমেন্ট</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════ -->
+<nav :class="scrolled ? 'bg-white/95 shadow-lg nav-glass' : 'bg-white'"
+     class="sticky top-0 z-50 transition-all duration-300 border-b border-leaf-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16">
+
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow-md">
+          <span class="text-xl">🌿</span>
+        </div>
+        <div class="leading-tight">
+          <div class="font-serif font-bold text-leaf-800 text-lg">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium tracking-wide">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+
+      <!-- Search Bar (desktop) -->
+      <div class="hidden md:flex flex-1 max-w-xl mx-6">
+        <div class="relative w-full">
+          <input type="search" placeholder="পণ্য খুঁজুন... যেমন: জৈব সার, দেশি মুরগি..."
+                 class="w-full pl-4 pr-12 py-2.5 rounded-xl border-2 border-leaf-200 bg-leaf-50 focus:outline-none focus:border-leaf-500 text-sm transition-all" />
+          <button class="absolute right-2 top-1/2 -translate-y-1/2 bg-leaf-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-leaf-700 transition-colors">
+            🔍
+          </button>
+        </div>
+      </div>
+
+      <!-- Nav Right -->
+      <div class="flex items-center gap-3">
+        <!-- Mobile Search -->
+        <button @click="searchOpen=!searchOpen" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-leaf-50 text-leaf-700">
+          🔍
+        </button>
+
+        <!-- Cart -->
+        <a href="#" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+          <span class="text-xl">🛒</span>
+          <span x-show="cartCount > 0"
+                class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                x-text="cartCount"></span>
+        </a>
+
+        <!-- Account -->
+        <a href="#" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-leaf-600 text-white text-sm font-medium hover:bg-leaf-700 transition-colors">
+          <span>👤</span> লগইন
+        </a>
+
+        <!-- Hamburger -->
+        <button @click="mobileMenu=!mobileMenu" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-leaf-50">
+          <svg class="w-5 h-5 text-leaf-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Search Bar -->
+    <div x-show="searchOpen" x-transition class="md:hidden pb-3">
+      <div class="relative">
+        <input type="search" placeholder="পণ্য খুঁজুন..."
+               class="w-full pl-4 pr-12 py-2.5 rounded-xl border-2 border-leaf-200 bg-leaf-50 focus:outline-none focus:border-leaf-500 text-sm" />
+        <button class="absolute right-2 top-1/2 -translate-y-1/2 bg-leaf-600 text-white px-3 py-1.5 rounded-lg text-sm">🔍</button>
+      </div>
+    </div>
+
+    <!-- Desktop Nav Links -->
+    <div class="hidden md:flex items-center gap-1 pb-2 border-t border-leaf-50 pt-2 text-sm font-medium overflow-x-auto">
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">🏠 হোম</a>
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">🌱 বীজ ও সার</a>
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">🐔 পশু-পাখি</a>
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">🥦 তাজা সবজি</a>
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">🚜 যন্ত্রপাতি</a>
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">🍯 মধু ও মাশরুম</a>
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">🏡 ছাদ বাগান</a>
+      <a href="#" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50 hover:text-leaf-700 whitespace-nowrap transition-colors">📚 কৃষি ব্লগ</a>
+      <a href="#" class="ml-auto px-3 py-1 rounded-lg text-earth-700 bg-earth-50 hover:bg-earth-100 font-semibold whitespace-nowrap transition-colors">🎁 অফার</a>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div x-show="mobileMenu" x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 -translate-y-2"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       class="md:hidden bg-white border-t border-leaf-100 px-4 py-4 grid grid-cols-2 gap-2 text-sm">
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-leaf-50 text-leaf-800">🏠 হোম</a>
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-leaf-50 text-leaf-800">🌱 বীজ ও সার</a>
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-leaf-50 text-leaf-800">🐔 পশু-পাখি</a>
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-leaf-50 text-leaf-800">🥦 তাজা সবজি</a>
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-leaf-50 text-leaf-800">🚜 যন্ত্রপাতি</a>
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-leaf-50 text-leaf-800">🍯 মধু ও মাশরুম</a>
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-leaf-50 text-leaf-800">🏡 ছাদ বাগান</a>
+    <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-earth-50 text-earth-700 font-semibold">🎁 অফার</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     HERO SECTION
+════════════════════════════════════════ -->
+<section class="hero-bg min-h-[520px] flex items-center relative">
+  <!-- Floating decorations -->
+  <div class="floating-leaf animate-float" style="top:10%;left:5%">🌾</div>
+  <div class="floating-leaf animate-float2" style="top:60%;right:8%;font-size:60px">🌿</div>
+  <div class="floating-leaf animate-float" style="top:30%;left:45%;font-size:50px;opacity:0.05">🌻</div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-20 w-full">
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+
+      <!-- Left Content -->
+      <div class="text-white">
+        <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-white/90 text-xs px-3 py-1.5 rounded-full mb-5 font-medium">
+          <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+          ২০১৭ সাল থেকে কৃষকের পাশে
+        </div>
+
+        <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
+          দেশের মাটির<br/>
+          <span class="text-yellow-300">সেরা পণ্য</span><br/>
+          ঘরে বসে পান
+        </h1>
+        <p class="text-white/80 text-base md:text-lg leading-relaxed mb-8 max-w-md">
+          বীজ থেকে শুরু করে যন্ত্রপাতি — কৃষির প্রতিটি প্রয়োজনীয় পণ্য এখন এক ক্লিকেই। সারা বাংলাদেশে ডেলিভারি।
+        </p>
+
+        <div class="flex flex-wrap gap-3">
+          <a href="#products" class="btn-earth text-white font-semibold px-6 py-3 rounded-xl shadow-lg inline-flex items-center gap-2">
+            🛒 এখনই কিনুন
+          </a>
+          <a href="#categories" class="bg-white/15 backdrop-blur-sm border border-white/30 text-white font-medium px-6 py-3 rounded-xl hover:bg-white/25 transition-all inline-flex items-center gap-2">
+            🌿 সব ক্যাটাগরি
+          </a>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="flex gap-6 mt-10 pt-8 border-t border-white/20">
+          <div>
+            <div class="text-2xl font-bold text-yellow-300">৫০০+</div>
+            <div class="text-white/70 text-xs">পণ্যের সংগ্রহ</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-yellow-300">১ লক্ষ+</div>
+            <div class="text-white/70 text-xs">সন্তুষ্ট ক্রেতা</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-yellow-300">৬৪</div>
+            <div class="text-white/70 text-xs">জেলায় ডেলিভারি</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Feature Cards -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 card-hover cursor-pointer">
+          <div class="text-4xl mb-3">🌱</div>
+          <div class="text-white font-semibold text-sm">জৈব সার ও বীজ</div>
+          <div class="text-white/60 text-xs mt-1">১০০+ ধরনের বীজ</div>
+          <div class="mt-3 text-yellow-300 text-xs font-medium">দেখুন →</div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 card-hover cursor-pointer mt-6">
+          <div class="text-4xl mb-3">🐓</div>
+          <div class="text-white font-semibold text-sm">দেশি পশু-পাখি</div>
+          <div class="text-white/60 text-xs mt-1">তাজা ও স্বাস্থ্যকর</div>
+          <div class="mt-3 text-yellow-300 text-xs font-medium">দেখুন →</div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 card-hover cursor-pointer">
+          <div class="text-4xl mb-3">🚜</div>
+          <div class="text-white font-semibold text-sm">কৃষি যন্ত্রপাতি</div>
+          <div class="text-white/60 text-xs mt-1">সুলভ মূল্যে</div>
+          <div class="mt-3 text-yellow-300 text-xs font-medium">দেখুন →</div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 card-hover cursor-pointer mt-6">
+          <div class="text-4xl mb-3">🍯</div>
+          <div class="text-white font-semibold text-sm">মধু ও মাশরুম</div>
+          <div class="text-white/60 text-xs mt-1">খাঁটি ও প্রাকৃতিক</div>
+          <div class="mt-3 text-yellow-300 text-xs font-medium">দেখুন →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wave bottom -->
+  <svg class="hero-wave" viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,40 C360,0 1080,70 1440,20 L1440,60 L0,60 Z" fill="#fdf6e3"/>
+  </svg>
+</section>
+
+<!-- ══════════════════════════════════════
+     TRUST BADGES
+════════════════════════════════════════ -->
+<section class="bg-cream py-6 border-b border-leaf-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="flex items-center gap-3 p-3">
+        <div class="w-10 h-10 bg-leaf-100 rounded-xl flex items-center justify-center text-xl shrink-0">🚚</div>
+        <div>
+          <div class="font-semibold text-leaf-800 text-sm">দ্রুত ডেলিভারি</div>
+          <div class="text-xs text-gray-500">৬৪ জেলায় পৌঁছাই</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 p-3">
+        <div class="w-10 h-10 bg-earth-100 rounded-xl flex items-center justify-center text-xl shrink-0">🔒</div>
+        <div>
+          <div class="font-semibold text-earth-800 text-sm">নিরাপদ পেমেন্ট</div>
+          <div class="text-xs text-gray-500">SSL সুরক্ষিত</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 p-3">
+        <div class="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center text-xl shrink-0">↩️</div>
+        <div>
+          <div class="font-semibold text-sky-800 text-sm">রিটার্ন পলিসি</div>
+          <div class="text-xs text-gray-500">৭ দিনের মধ্যে ফেরত</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 p-3">
+        <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-xl shrink-0">📞</div>
+        <div>
+          <div class="font-semibold text-yellow-800 text-sm">সার্বক্ষণিক সাপোর্ট</div>
+          <div class="text-xs text-gray-500">০১৯০৮-৫৯৭৪৭০</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     CATEGORIES
+════════════════════════════════════════ -->
+<section id="categories" class="py-14 bg-cream">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="mb-8">
+      <div class="section-divider mb-3"></div>
+      <h2 class="text-2xl md:text-3xl font-bold text-leaf-800">সব ক্যাটাগরি</h2>
+      <p class="text-gray-500 mt-1 text-sm">আপনার প্রয়োজনীয় পণ্যটি বেছে নিন</p>
+    </div>
+
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+      <!-- Category Items -->
+      <template x-for="cat in [
+        {icon:'🌱', name:'বীজ', count:'১২০+'},
+        {icon:'🌿', name:'সার', count:'৮০+'},
+        {icon:'🐓', name:'মুরগি', count:'৩০+'},
+        {icon:'🐟', name:'মাছ', count:'৪৫+'},
+        {icon:'🥦', name:'সবজি', count:'৬০+'},
+        {icon:'🍎', name:'ফলমূল', count:'৩৫+'},
+        {icon:'🚜', name:'যন্ত্রপাতি', count:'৯০+'},
+        {icon:'🍯', name:'মধু', count:'২৫+'},
+        {icon:'🍄', name:'মাশরুম', count:'১৫+'},
+        {icon:'🐐', name:'ছাগল', count:'২০+'},
+        {icon:'🐄', name:'গরু', count:'১৮+'},
+        {icon:'🌻', name:'ফুল বাগান', count:'৪০+'},
+        {icon:'🏡', name:'ছাদ বাগান', count:'৫৫+'},
+        {icon:'💧', name:'সেচ', count:'৩৮+'},
+        {icon:'🐣', name:'হাঁস-পাখি', count:'২২+'},
+        {icon:'📚', name:'কৃষি বই', count:'৭০+'}
+      ]">
+        <a href="#" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white hover:bg-leaf-50 border border-transparent hover:border-leaf-200 card-hover text-center group">
+          <div class="w-12 h-12 bg-gradient-to-br from-leaf-50 to-leaf-100 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            <span x-text="cat.icon"></span>
+          </div>
+          <div class="text-xs font-semibold text-leaf-800" x-text="cat.name"></div>
+          <div class="text-[10px] text-gray-400" x-text="cat.count"></div>
+        </a>
+      </template>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FLASH OFFER BANNER
+════════════════════════════════════════ -->
+<section class="py-6 bg-gradient-to-r from-earth-700 via-earth-600 to-earth-500 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10"
+       style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)">
+  </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 relative">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
+      <div class="flex items-center gap-4">
+        <div class="text-4xl animate-bounce">🔥</div>
+        <div>
+          <div class="font-bold text-xl md:text-2xl">ঈদ স্পেশাল অফার!</div>
+          <div class="text-white/80 text-sm">নির্বাচিত পণ্যে ৩০% পর্যন্ত ছাড়</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <!-- Countdown -->
+        <div x-data="{
+          h: 12, m: 34, s: 56,
+          tick() {
+            if(this.s > 0) this.s--;
+            else if(this.m > 0){ this.m--; this.s=59; }
+            else if(this.h > 0){ this.h--; this.m=59; this.s=59; }
+          }
+        }" x-init="setInterval(()=>tick(),1000)" class="flex items-center gap-1">
+          <div class="bg-white/20 rounded-lg px-3 py-2 text-center min-w-[48px]">
+            <div class="font-bold text-xl" x-text="String(h).padStart(2,'০')"></div>
+            <div class="text-[10px] text-white/70">ঘণ্টা</div>
+          </div>
+          <span class="font-bold text-xl">:</span>
+          <div class="bg-white/20 rounded-lg px-3 py-2 text-center min-w-[48px]">
+            <div class="font-bold text-xl" x-text="String(m).padStart(2,'০')"></div>
+            <div class="text-[10px] text-white/70">মিনিট</div>
+          </div>
+          <span class="font-bold text-xl">:</span>
+          <div class="bg-white/20 rounded-lg px-3 py-2 text-center min-w-[48px]">
+            <div class="font-bold text-xl" x-text="String(s).padStart(2,'০')"></div>
+            <div class="text-[10px] text-white/70">সেকেন্ড</div>
+          </div>
+        </div>
+        <a href="#" class="bg-white text-earth-700 font-bold px-5 py-2.5 rounded-xl hover:bg-earth-50 transition-colors whitespace-nowrap text-sm shadow-lg">
+          অফার দেখুন
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FEATURED PRODUCTS
+════════════════════════════════════════ -->
+<section id="products" class="py-14 bg-cream" x-data="{
+  activeCategory: 'সব',
+  addedToCart: null,
+  products: [
+    {id:1, name:'দেশি মুরগি (জীবন্ত)', price:'৳৩৮০', old:'৳৪৫০', cat:'পশু-পাখি', icon:'🐓', tag:'বেস্ট সেলার', rating:4.8, reviews:243, badge:'hot'},
+    {id:2, name:'খাঁটি সরিষার তেল (১লি)', price:'৳২৮০', old:'৳৩২০', cat:'খাদ্য', icon:'🫙', tag:'অর্গানিক', rating:4.9, reviews:187, badge:'new'},
+    {id:3, name:'জৈব সার (৫ কেজি)', price:'৳১৮০', old:'৳২২০', cat:'সার', icon:'🌿', tag:'সেরা মান', rating:4.7, reviews:312, badge:''},
+    {id:4, name:'হাইব্রিড টমেটো বীজ', price:'৳৯৫', old:'৳১২০', cat:'বীজ', icon:'🍅', tag:'উচ্চফলনশীল', rating:4.6, reviews:98, badge:'sale'},
+    {id:5, name:'রানিং পাম্প (১HP)', price:'৳৫,৮০০', old:'৳৬,৫০০', cat:'যন্ত্রপাতি', icon:'⚙️', tag:'টেকসই', rating:4.5, reviews:67, badge:''},
+    {id:6, name:'খাঁটি মধু (৫০০গ্রা)', price:'৳৬৫০', old:'৳৭৫০', cat:'খাদ্য', icon:'🍯', tag:'সুন্দরবনের', rating:5.0, reviews:421, badge:'top'},
+    {id:7, name:'দেশি ধান বীজ (কেজি)', price:'৳১৪০', old:'', cat:'বীজ', icon:'🌾', tag:'উচ্চফলনশীল', rating:4.4, reviews:55, badge:''},
+    {id:8, name:'মাশরুম স্পন প্যাকেজ', price:'৳৩৫০', old:'৳৪২০', cat:'খাদ্য', icon:'🍄', tag:'শখের চাষ', rating:4.7, reviews:139, badge:'new'},
+  ],
+  categories: ['সব','বীজ','সার','পশু-পাখি','খাদ্য','যন্ত্রপাতি'],
+  get filtered() {
+    if(this.activeCategory === 'সব') return this.products;
+    return this.products.filter(p => p.cat === this.activeCategory || p.name.includes(this.activeCategory));
+  },
+  addCart(id) {
+    this.addedToCart = id;
+    cartCount++;
+    setTimeout(()=>this.addedToCart=null, 1500);
+  }
+}">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+      <div>
+        <div class="section-divider mb-3"></div>
+        <h2 class="text-2xl md:text-3xl font-bold text-leaf-800">জনপ্রিয় পণ্যসমূহ</h2>
+      </div>
+      <!-- Category Filter -->
+      <div class="flex flex-wrap gap-2">
+        <template x-for="cat in categories">
+          <button @click="activeCategory = cat"
+                  :class="activeCategory === cat ? 'bg-leaf-600 text-white shadow-md' : 'bg-white text-leaf-700 border border-leaf-200 hover:border-leaf-400'"
+                  class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                  x-text="cat"></button>
+        </template>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <template x-for="product in filtered" :key="product.id">
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-leaf-50 card-hover relative group">
+          <!-- Badge -->
+          <div x-show="product.badge === 'hot'" class="badge-ribbon">🔥 হট</div>
+          <div x-show="product.badge === 'new'" class="badge-ribbon" style="background:#0052a3">✨ নতুন</div>
+          <div x-show="product.badge === 'sale'" class="badge-ribbon" style="background:#c0392b">💥 সেল</div>
+          <div x-show="product.badge === 'top'" class="badge-ribbon" style="background:#7d3c18">⭐ টপ</div>
+
+          <!-- Wishlist -->
+          <button class="absolute top-2 left-2 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-50">
+            🤍
+          </button>
+
+          <!-- Image Area -->
+          <div class="product-img-wrap h-36 flex items-center justify-center">
+            <span x-text="product.icon" class="text-6xl group-hover:scale-110 transition-transform duration-300"></span>
+          </div>
+
+          <!-- Content -->
+          <div class="p-3">
+            <div class="inline-block bg-leaf-50 text-leaf-700 text-[10px] font-medium px-2 py-0.5 rounded-full mb-1.5" x-text="product.tag"></div>
+            <h3 class="font-semibold text-leaf-900 text-sm leading-snug mb-2" x-text="product.name"></h3>
+
+            <!-- Rating -->
+            <div class="flex items-center gap-1 mb-2">
+              <div class="flex text-yellow-400 text-xs">
+                <template x-for="i in 5">
+                  <span>★</span>
+                </template>
+              </div>
+              <span class="text-xs text-gray-500" x-text="'('+product.reviews+')'"></span>
+            </div>
+
+            <!-- Price -->
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-bold text-earth-700 text-base" x-text="product.price"></span>
+                <span x-show="product.old" class="text-gray-400 text-xs line-through ml-1" x-text="product.old"></span>
+              </div>
+            </div>
+
+            <!-- Add to Cart -->
+            <button @click="addCart(product.id)"
+                    :class="addedToCart === product.id ? 'bg-leaf-500' : 'btn-primary'"
+                    class="w-full mt-3 text-white text-xs font-medium py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all">
+              <span x-text="addedToCart === product.id ? '✓ যোগ হয়েছে' : '🛒 কার্টে যোগ করুন'"></span>
+            </button>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div class="text-center mt-8">
+      <a href="#" class="inline-flex items-center gap-2 border-2 border-leaf-600 text-leaf-700 font-semibold px-8 py-3 rounded-xl hover:bg-leaf-600 hover:text-white transition-all">
+        সব পণ্য দেখুন →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     WHY US SECTION
+════════════════════════════════════════ -->
+<section class="py-14 bg-gradient-to-br from-leaf-900 to-leaf-700 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-5" style="background-image:radial-gradient(circle at 20% 50%, white 1px, transparent 1px),radial-gradient(circle at 80% 50%, white 1px, transparent 1px);background-size:40px 40px"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 relative">
+    <div class="text-center mb-10">
+      <div class="section-divider mx-auto mb-3"></div>
+      <h2 class="text-2xl md:text-3xl font-bold text-white">কেন কৃষি বাজার বেছে নেবেন?</h2>
+      <p class="text-white/60 mt-2 text-sm">লক্ষাধিক কৃষক ও ক্রেতার বিশ্বাসের কারণ</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-6 card-hover">
+        <div class="text-4xl mb-4">🌱</div>
+        <h3 class="text-white font-bold text-lg mb-2">১০০% খাঁটি পণ্য</h3>
+        <p class="text-white/60 text-sm leading-relaxed">সরাসরি কৃষকের কাছ থেকে সংগৃহীত। কোনো ভেজাল নেই, কোনো কেমিক্যাল নেই। প্রতিটি পণ্য মান নিয়ন্ত্রিত।</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-6 card-hover">
+        <div class="text-4xl mb-4">⚡</div>
+        <h3 class="text-white font-bold text-lg mb-2">দ্রুত ডেলিভারি</h3>
+        <p class="text-white/60 text-sm leading-relaxed">অর্ডার দিন আজ, পণ্য পান কাল। রংপুর থেকে ঢাকা, সারা বাংলাদেশে আমাদের নিজস্ব ডেলিভারি নেটওয়ার্ক।</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-6 card-hover">
+        <div class="text-4xl mb-4">💬</div>
+        <h3 class="text-white font-bold text-lg mb-2">বিশেষজ্ঞ পরামর্শ</h3>
+        <p class="text-white/60 text-sm leading-relaxed">কৃষি বিশেষজ্ঞদের সাথে কথা বলুন। ফোনে, চ্যাটে বা সরাসরি — আমরা সবসময় আছি আপনার পাশে।</p>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/10">
+      <div class="text-center">
+        <div class="text-3xl font-bold text-yellow-300">১ লক্ষ+</div>
+        <div class="text-white/60 text-sm mt-1">সক্রিয় ক্রেতা</div>
+      </div>
+      <div class="text-center">
+        <div class="text-3xl font-bold text-yellow-300">৫০০+</div>
+        <div class="text-white/60 text-sm mt-1">মোট পণ্য</div>
+      </div>
+      <div class="text-center">
+        <div class="text-3xl font-bold text-yellow-300">৬৪</div>
+        <div class="text-white/60 text-sm mt-1">জেলায় ডেলিভারি</div>
+      </div>
+      <div class="text-center">
+        <div class="text-3xl font-bold text-yellow-300">৯৮%</div>
+        <div class="text-white/60 text-sm mt-1">সন্তুষ্টি রেটিং</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     BLOG / TIPS SECTION
+════════════════════════════════════════ -->
+<section class="py-14 bg-cream">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+      <div>
+        <div class="section-divider mb-3"></div>
+        <h2 class="text-2xl md:text-3xl font-bold text-leaf-800">কৃষি পরামর্শ ও টিপস</h2>
+      </div>
+      <a href="#" class="text-leaf-600 font-medium text-sm hover:text-leaf-800 transition-colors">সব আর্টিকেল দেখুন →</a>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <article class="bg-white rounded-2xl overflow-hidden shadow-sm border border-leaf-50 card-hover group">
+        <div class="h-40 bg-gradient-to-br from-leaf-200 to-leaf-400 flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-500 overflow-hidden">
+          🌾
+        </div>
+        <div class="p-4">
+          <span class="bg-leaf-50 text-leaf-700 text-[11px] font-medium px-2 py-0.5 rounded-full">ধান চাষ</span>
+          <h3 class="font-bold text-leaf-900 mt-2 mb-1 text-sm leading-snug">বোরো ধানের জমিতে সার প্রয়োগের সঠিক পদ্ধতি</h3>
+          <p class="text-gray-500 text-xs leading-relaxed">সঠিক সময়ে সঠিক পরিমাণে সার দিলে ফলন বাড়ে দ্বিগুণ। জেনে নিন কৃষি বিশেষজ্ঞের পরামর্শ...</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-leaf-50">
+            <span class="text-xs text-gray-400">৪ এপ্রিল, ২০২৬</span>
+            <a href="#" class="text-leaf-600 text-xs font-medium hover:text-leaf-800">পড়ুন →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-2xl overflow-hidden shadow-sm border border-leaf-50 card-hover group">
+        <div class="h-40 bg-gradient-to-br from-earth-200 to-earth-400 flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-500 overflow-hidden">
+          🐓
+        </div>
+        <div class="p-4">
+          <span class="bg-earth-50 text-earth-700 text-[11px] font-medium px-2 py-0.5 rounded-full">পোল্ট্রি</span>
+          <h3 class="font-bold text-leaf-900 mt-2 mb-1 text-sm leading-snug">ছাগল পালনে লাভজনক হওয়ার ৫টি গোপন রহস্য</h3>
+          <p class="text-gray-500 text-xs leading-relaxed">অল্প পুঁজিতে ছাগল পালন শুরু করে কীভাবে মাসে লাখ টাকা আয় করা সম্ভব তা জানুন...</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-leaf-50">
+            <span class="text-xs text-gray-400">২ এপ্রিল, ২০২৬</span>
+            <a href="#" class="text-leaf-600 text-xs font-medium hover:text-leaf-800">পড়ুন →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-2xl overflow-hidden shadow-sm border border-leaf-50 card-hover group">
+        <div class="h-40 bg-gradient-to-br from-sky-200 to-sky-400 flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-500 overflow-hidden">
+          🏡
+        </div>
+        <div class="p-4">
+          <span class="bg-sky-50 text-sky-700 text-[11px] font-medium px-2 py-0.5 rounded-full">ছাদ বাগান</span>
+          <h3 class="font-bold text-leaf-900 mt-2 mb-1 text-sm leading-snug">ছাদে সবজি বাগান শুরু করার সহজ গাইড ২০২৬</h3>
+          <p class="text-gray-500 text-xs leading-relaxed">শহরে থেকেও তাজা সবজি খান। ছাদে বাগান করুন মাত্র ১০টি পদক্ষেপে, বিশেষজ্ঞের সহজ পরামর্শ...</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-leaf-50">
+            <span class="text-xs text-gray-400">১ এপ্রিল, ২০২৬</span>
+            <a href="#" class="text-leaf-600 text-xs font-medium hover:text-leaf-800">পড়ুন →</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     TESTIMONIALS
+════════════════════════════════════════ -->
+<section class="py-14 bg-leaf-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10">
+      <div class="section-divider mx-auto mb-3"></div>
+      <h2 class="text-2xl md:text-3xl font-bold text-leaf-800">ক্রেতাদের মতামত</h2>
+      <p class="text-gray-500 mt-1 text-sm">হাজার হাজার সন্তুষ্ট ক্রেতার বিশ্বাস</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-5">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-leaf-100 relative">
+        <div class="text-yellow-400 text-sm mb-3">★★★★★</div>
+        <p class="text-gray-600 text-sm leading-relaxed mb-4">"দেশি মুরগি অর্ডার করেছিলাম, একদম তাজা পেলাম। দাম একটু বেশি মনে হলেও মান দেখে মন ভালো হয়ে গেল!"</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-leaf-200 to-leaf-400 rounded-full flex items-center justify-center text-lg">👨</div>
+          <div>
+            <div class="font-semibold text-leaf-900 text-sm">রহিম উদ্দিন</div>
+            <div class="text-xs text-gray-400">ঢাকা, মিরপুর</div>
+          </div>
+        </div>
+        <div class="absolute top-4 right-5 text-leaf-100 text-5xl font-serif">"</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-leaf-100 relative">
+        <div class="text-yellow-400 text-sm mb-3">★★★★★</div>
+        <p class="text-gray-600 text-sm leading-relaxed mb-4">"জৈব সার নিয়ে অনেক ভালো ফলন পেয়েছি এবার। কৃষি বাজারের সাথে আছি ৩ বছর ধরে, কোনো অভিযোগ নেই।"</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-earth-200 to-earth-400 rounded-full flex items-center justify-center text-lg">👩</div>
+          <div>
+            <div class="font-semibold text-leaf-900 text-sm">সালমা বেগম</div>
+            <div class="text-xs text-gray-400">ময়মনসিংহ</div>
+          </div>
+        </div>
+        <div class="absolute top-4 right-5 text-leaf-100 text-5xl font-serif">"</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-leaf-100 relative">
+        <div class="text-yellow-400 text-sm mb-3">★★★★★</div>
+        <p class="text-gray-600 text-sm leading-relaxed mb-4">"সুন্দরবনের মধু পেলাম একদম খাঁটি। ডেলিভারিও হলো মাত্র ২ দিনে। দারুণ সার্ভিস, সবাইকে রেকমেন্ড করব।"</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-sky-200 to-sky-400 rounded-full flex items-center justify-center text-lg">👨</div>
+          <div>
+            <div class="font-semibold text-leaf-900 text-sm">করিম সাহেব</div>
+            <div class="text-xs text-gray-400">চট্টগ্রাম</div>
+          </div>
+        </div>
+        <div class="absolute top-4 right-5 text-leaf-100 text-5xl font-serif">"</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     NEWSLETTER
+════════════════════════════════════════ -->
+<section class="py-12 bg-gradient-to-br from-earth-600 to-earth-800 relative overflow-hidden"
+         x-data="{email:'', subscribed:false}">
+  <div class="absolute inset-0" style="background:radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.05) 0%, transparent 60%)"></div>
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 text-center relative">
+    <div class="text-4xl mb-4">📬</div>
+    <h2 class="text-2xl font-bold text-white mb-2">কৃষি টিপস ও অফার পান সরাসরি</h2>
+    <p class="text-white/70 text-sm mb-6">সাপ্তাহিক নিউজলেটারে সাবস্ক্রাইব করুন — বিশেষ ছাড় ও কৃষি পরামর্শ পান সবার আগে।</p>
+
+    <div x-show="!subscribed" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+      <input x-model="email" type="email" placeholder="আপনার ইমেইল লিখুন..."
+             class="flex-1 px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-white/30 bg-white/10 border border-white/20 text-white placeholder-white/50" />
+      <button @click="if(email){ subscribed=true }" class="bg-white text-earth-700 font-bold px-6 py-3 rounded-xl hover:bg-earth-50 transition-colors whitespace-nowrap text-sm">
+        সাবস্ক্রাইব করুন
+      </button>
+    </div>
+    <div x-show="subscribed" x-transition class="text-white font-semibold text-lg">
+      ✅ সফলভাবে সাবস্ক্রাইব হয়েছেন! ধন্যবাদ।
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer class="bg-leaf-900 text-white pt-12 pb-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-10 border-b border-white/10">
+
+      <!-- Brand -->
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-2xl">🌿</div>
+          <div>
+            <div class="font-serif font-bold text-lg">কৃষি বাজার</div>
+            <div class="text-[10px] text-white/50">দেশের কৃষির অনলাইন হাট</div>
+          </div>
+        </div>
+        <p class="text-white/50 text-xs leading-relaxed mb-4">২০১৭ সাল থেকে বাংলাদেশের কৃষকদের পাশে। দেশের একমাত্র কৃষি ভিত্তিক পূর্নাঙ্গ ই-কমার্স প্ল্যাটফর্ম।</p>
+        <div class="flex gap-2">
+          <a href="#" class="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm hover:bg-white/20 transition-colors">f</a>
+          <a href="#" class="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm hover:bg-white/20 transition-colors">▶</a>
+          <a href="#" class="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm hover:bg-white/20 transition-colors">in</a>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <div>
+        <h4 class="font-semibold mb-4 text-sm">দ্রুত লিংক</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">🏠 হোম</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">🛒 পণ্যসমূহ</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">🎁 অফার</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">📚 কৃষি ব্লগ</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">ℹ️ আমাদের সম্পর্কে</a></li>
+        </ul>
+      </div>
+
+      <!-- Support -->
+      <div>
+        <h4 class="font-semibold mb-4 text-sm">সাপোর্ট</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">📋 অর্ডার ট্র্যাক</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">↩️ রিটার্ন পলিসি</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">❓ সাধারণ প্রশ্ন</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">🔒 গোপনীয়তা নীতি</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">📄 শর্তাবলী</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div>
+        <h4 class="font-semibold mb-4 text-sm">যোগাযোগ</h4>
+        <ul class="space-y-2">
+          <li class="text-white/50 text-xs">📍 বাসা-৫১/১, সালেমা খাতুন রোড, রংপুর</li>
+          <li><a href="tel:01908597470" class="text-white/50 text-xs hover:text-white transition-colors">📞 ০১৯০৮-৫৯৭৪৭০</a></li>
+          <li><a href="tel:01908597471" class="text-white/50 text-xs hover:text-white transition-colors">📞 ০১৯০৮-৫৯৭৪৭১</a></li>
+          <li><a href="#" class="text-white/50 text-xs hover:text-white transition-colors">✉️ info@krishibazar.com.bd</a></li>
+        </ul>
+        <!-- App Badges -->
+        <div class="flex gap-2 mt-4">
+          <div class="bg-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 flex items-center gap-1 hover:bg-white/20 transition-colors cursor-pointer">
+            📱 App Store
+          </div>
+          <div class="bg-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 flex items-center gap-1 hover:bg-white/20 transition-colors cursor-pointer">
+            🤖 Play Store
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-white/40 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p>
+      <div class="flex items-center gap-3">
+        <span class="text-white/40 text-xs">পেমেন্ট গ্রহণ করা হয়:</span>
+        <div class="flex gap-2">
+          <span class="bg-white/10 text-white/60 text-xs px-2 py-1 rounded-md">bKash</span>
+          <span class="bg-white/10 text-white/60 text-xs px-2 py-1 rounded-md">Nagad</span>
+          <span class="bg-white/10 text-white/60 text-xs px-2 py-1 rounded-md">Rocket</span>
+          <span class="bg-white/10 text-white/60 text-xs px-2 py-1 rounded-md">VISA</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating WhatsApp Button -->
+<a href="https://wa.me/01908597470" target="_blank"
+   class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-xl hover:bg-green-600 hover:scale-110 transition-all z-50">
+  💬
+</a>
+
+</body>
+</html>

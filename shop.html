@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="shopApp()" @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>শপ — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: {
+            bangla: ['Hind Siliguri','sans-serif'],
+            serif:  ['Noto Serif Bengali','serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; }
+    .nav-glass{ backdrop-filter:blur(16px); }
+    .section-divider{ width:56px;height:4px;background:linear-gradient(90deg,#2e9c2e,#b8692a);border-radius:2px; }
+
+    .product-card{
+      background:white; border-radius:20px; overflow:hidden;
+      border:1.5px solid #f0faf0;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .product-card:hover{
+      transform:translateY(-6px);
+      box-shadow:0 20px 40px rgba(0,0,0,.1);
+      border-color:#a8e8a8;
+    }
+    .product-img{
+      background:linear-gradient(145deg,#f0faf0,#d6f5d6);
+      transition:transform .4s ease;
+    }
+    .product-card:hover .product-img{ transform:scale(1.04); }
+
+    .badge-ribbon{
+      position:absolute; top:10px; right:-4px;
+      font-size:10px; font-weight:700;
+      padding:2px 10px 2px 8px; color:white;
+      clip-path:polygon(0 0,100% 0,100% 100%,0 100%,6px 50%);
+    }
+
+    .filter-chip{
+      padding:6px 14px; border-radius:99px; font-size:13px; font-weight:500;
+      border:1.5px solid #a8e8a8; color:#1e7e1e; background:white;
+      cursor:pointer; transition:all .2s ease; white-space:nowrap;
+    }
+    .filter-chip.active, .filter-chip:hover{
+      background:#1e7e1e; color:white; border-color:#1e7e1e;
+    }
+
+    .range-slider{ -webkit-appearance:none; appearance:none; height:4px; background:#a8e8a8; border-radius:2px; outline:none; }
+    .range-slider::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; background:#1e7e1e; border-radius:50%; cursor:pointer; border:2px solid white; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+
+    .sort-select{ appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231e7e1e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:32px; }
+
+    .wishlist-btn{ transition:all .2s ease; }
+    .wishlist-btn.active{ color:#ef4444; }
+
+    .cart-toast{
+      position:fixed; bottom:80px; right:24px; z-index:100;
+      background:#1e7e1e; color:white; padding:12px 20px;
+      border-radius:12px; font-size:13px; font-weight:600;
+      box-shadow:0 8px 24px rgba(30,126,30,.4);
+      transition:all .3s ease;
+    }
+
+    .sidebar-section{ border-bottom:1px solid #f0faf0; padding-bottom:20px; margin-bottom:20px; }
+    .sidebar-section:last-child{ border:none; margin-bottom:0; padding-bottom:0; }
+
+    @keyframes slideInRight{ from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    .product-grid-item{ animation:slideInRight .4s ease forwards; }
+
+    .marquee-track{ display:flex; animation:marquee 28s linear infinite; white-space:nowrap; }
+    @keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in{ animation:fadeIn .3s ease forwards; }
+
+    /* Star rating */
+    .stars{ color:#f59e0b; letter-spacing:1px; }
+  </style>
+</head>
+
+<body class="overflow-x-hidden">
+
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div class="bg-leaf-800 text-white text-xs py-2 overflow-hidden">
+  <div class="marquee-track gap-12">
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">🎁 ৫০০ টাকার উপরে অর্ডারে ফ্রি ডেলিভারি</span>
+    <span class="px-8">🌱 ১০০% জৈব ও বিষমুক্ত পণ্য</span>
+    <span class="px-8">📞 হেল্পলাইন: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">🎁 ৫০০ টাকার উপরে অর্ডারে ফ্রি ডেলিভারি</span>
+    <span class="px-8">🌱 ১০০% জৈব ও বিষমুক্ত পণ্য</span>
+    <span class="px-8">📞 হেল্পলাইন: ০১৯০৮-৫৯৭৪৭০</span>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav :class="scrolled ? 'bg-white/95 shadow-md nav-glass':'bg-white'"
+     class="sticky top-0 z-50 border-b border-leaf-100 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 gap-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow">
+          <span class="text-xl">🌿</span>
+        </div>
+        <div class="hidden sm:block">
+          <div class="font-serif font-bold text-leaf-800 text-lg leading-none">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+
+      <!-- Search -->
+      <div class="flex-1 max-w-lg">
+        <div class="relative">
+          <input type="search" x-model="searchQuery" @input="filterProducts()"
+                 placeholder="পণ্য খুঁজুন..."
+                 class="w-full pl-4 pr-10 py-2.5 rounded-xl border-2 border-leaf-200 bg-leaf-50 focus:outline-none focus:border-leaf-500 text-sm transition-all" />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="cart.html" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+          <span class="text-xl">🛒</span>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center" x-text="cartCount"></span>
+        </a>
+        <a href="#" class="hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl bg-leaf-600 text-white text-sm font-medium hover:bg-leaf-700 transition-colors">👤 লগইন</a>
+      </div>
+    </div>
+
+    <!-- Sub nav -->
+    <div class="hidden md:flex items-center gap-1 pb-2 text-sm font-medium border-t border-leaf-50 pt-2">
+      <a href="index.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🏠 হোম</a>
+      <a href="about.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">আমাদের সম্পর্কে</a>
+      <a href="shop.html"    class="px-3 py-1 rounded-lg bg-leaf-600 text-white">🛒 শপ</a>
+      <a href="blog.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📚 ব্লগ</a>
+      <a href="contact.html" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📞 যোগাযোগ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ BREADCRUMB ══ -->
+<div class="bg-white border-b border-leaf-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center gap-2 text-xs text-gray-400">
+      <a href="index.html" class="hover:text-leaf-600 transition-colors">হোম</a>
+      <span>›</span>
+      <span class="text-leaf-700 font-medium">শপ</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CATEGORY PILLS (horizontal scroll) ══ -->
+<section class="bg-cream py-4 border-b border-leaf-100 sticky top-[104px] z-40 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <template x-for="cat in categories" :key="cat.id">
+        <button @click="selectCategory(cat.id)"
+                :class="activeCategory === cat.id ? 'active' : ''"
+                class="filter-chip shrink-0 flex items-center gap-1.5">
+          <span x-text="cat.icon"></span>
+          <span x-text="cat.name"></span>
+        </button>
+      </template>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MAIN CONTENT ══ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+  <div class="flex gap-8">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="hidden lg:block w-64 shrink-0">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-leaf-50 sticky top-[160px]">
+
+        <!-- Price Range -->
+        <div class="sidebar-section">
+          <h3 class="font-bold text-leaf-900 text-sm mb-4">💰 মূল্য সীমা</h3>
+          <input type="range" x-model="maxPrice" min="0" max="10000" step="100"
+                 @input="filterProducts()"
+                 class="range-slider w-full mb-2" />
+          <div class="flex justify-between text-xs text-gray-500">
+            <span>৳০</span>
+            <span class="font-semibold text-leaf-700">৳<span x-text="maxPrice"></span></span>
+            <span>৳১০,০০০</span>
+          </div>
+        </div>
+
+        <!-- Rating Filter -->
+        <div class="sidebar-section">
+          <h3 class="font-bold text-leaf-900 text-sm mb-3">⭐ রেটিং</h3>
+          <div class="space-y-2">
+            <template x-for="r in [5,4,3]">
+              <label class="flex items-center gap-2 cursor-pointer group">
+                <input type="radio" name="rating" :value="r" x-model="minRating" @change="filterProducts()" class="accent-leaf-600" />
+                <div class="flex items-center gap-1">
+                  <span class="stars text-sm" x-text="'★'.repeat(r)+'☆'.repeat(5-r)"></span>
+                  <span class="text-xs text-gray-400 group-hover:text-leaf-600 transition-colors">ও উপরে</span>
+                </div>
+              </label>
+            </template>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="rating" value="0" x-model="minRating" @change="filterProducts()" class="accent-leaf-600" />
+              <span class="text-xs text-gray-500">সব রেটিং</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="sidebar-section">
+          <h3 class="font-bold text-leaf-900 text-sm mb-3">📦 প্রাপ্যতা</h3>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" x-model="inStockOnly" @change="filterProducts()" class="accent-leaf-600 w-4 h-4" />
+            <span class="text-sm text-gray-600">শুধু স্টকে আছে</span>
+          </label>
+        </div>
+
+        <!-- Tags -->
+        <div class="sidebar-section">
+          <h3 class="font-bold text-leaf-900 text-sm mb-3">🏷️ ট্যাগ</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <template x-for="tag in allTags">
+              <button @click="toggleTag(tag)"
+                      :class="selectedTags.includes(tag) ? 'bg-leaf-600 text-white border-leaf-600':'bg-leaf-50 text-leaf-700 border-leaf-200'"
+                      class="text-xs px-2.5 py-1 rounded-full border transition-colors"
+                      x-text="tag"></button>
+            </template>
+          </div>
+        </div>
+
+        <!-- Reset -->
+        <button @click="resetFilters()"
+                class="w-full py-2 text-sm text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors font-medium">
+          ↺ ফিল্টার রিসেট করুন
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── PRODUCTS AREA ── -->
+    <div class="flex-1 min-w-0">
+
+      <!-- Toolbar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 class="text-xl font-bold text-leaf-900">
+            <span x-text="activeCategory === 'all' ? 'সব পণ্য' : categories.find(c=>c.id===activeCategory)?.name || 'পণ্যসমূহ'"></span>
+          </h1>
+          <p class="text-sm text-gray-400 mt-0.5">
+            <span x-text="filteredProducts.length"></span> টি পণ্য পাওয়া গেছে
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- Mobile Filter Button -->
+          <button @click="mobileFilter=true" class="lg:hidden flex items-center gap-1.5 px-3 py-2 bg-white border border-leaf-200 rounded-xl text-sm text-leaf-700 font-medium hover:bg-leaf-50 transition-colors">
+            ⚙️ ফিল্টার
+          </button>
+
+          <!-- Sort -->
+          <select x-model="sortBy" @change="filterProducts()"
+                  class="sort-select px-3 py-2 bg-white border border-leaf-200 rounded-xl text-sm text-leaf-800 focus:outline-none focus:border-leaf-400 font-medium">
+            <option value="default">ডিফল্ট</option>
+            <option value="price_asc">মূল্য: কম থেকে বেশি</option>
+            <option value="price_desc">মূল্য: বেশি থেকে কম</option>
+            <option value="rating">সর্বোচ্চ রেটিং</option>
+            <option value="newest">নতুন পণ্য</option>
+          </select>
+
+          <!-- Grid/List toggle -->
+          <div class="flex bg-white border border-leaf-200 rounded-xl overflow-hidden">
+            <button @click="gridView=true" :class="gridView?'bg-leaf-600 text-white':'text-leaf-600 hover:bg-leaf-50'" class="px-3 py-2 text-sm transition-colors">⊞</button>
+            <button @click="gridView=false" :class="!gridView?'bg-leaf-600 text-white':'text-leaf-600 hover:bg-leaf-50'" class="px-3 py-2 text-sm transition-colors">☰</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Filters display -->
+      <div x-show="selectedTags.length > 0 || minRating > 0 || maxPrice < 10000 || inStockOnly || searchQuery"
+           class="flex flex-wrap gap-2 mb-4 fade-in">
+        <span class="text-xs text-gray-400 py-1">সক্রিয় ফিল্টার:</span>
+        <template x-for="tag in selectedTags">
+          <span class="inline-flex items-center gap-1 bg-leaf-100 text-leaf-700 text-xs px-2.5 py-1 rounded-full">
+            <span x-text="tag"></span>
+            <button @click="toggleTag(tag)" class="hover:text-red-500 font-bold">×</button>
+          </span>
+        </template>
+        <span x-show="maxPrice < 10000" class="inline-flex items-center gap-1 bg-earth-100 text-earth-700 text-xs px-2.5 py-1 rounded-full">
+          সর্বোচ্চ ৳<span x-text="maxPrice"></span>
+          <button @click="maxPrice=10000;filterProducts()" class="hover:text-red-500 font-bold">×</button>
+        </span>
+        <span x-show="inStockOnly" class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full">
+          স্টকে আছে
+          <button @click="inStockOnly=false;filterProducts()" class="hover:text-red-500 font-bold">×</button>
+        </span>
+      </div>
+
+      <!-- No results -->
+      <div x-show="filteredProducts.length === 0" class="text-center py-20 fade-in">
+        <div class="text-6xl mb-4">🔍</div>
+        <h3 class="font-bold text-leaf-900 text-xl mb-2">কোনো পণ্য পাওয়া যায়নি</h3>
+        <p class="text-gray-400 text-sm mb-4">ফিল্টার পরিবর্তন করে আবার চেষ্টা করুন</p>
+        <button @click="resetFilters()" class="px-5 py-2 bg-leaf-600 text-white rounded-xl text-sm font-medium hover:bg-leaf-700 transition-colors">সব পণ্য দেখুন</button>
+      </div>
+
+      <!-- GRID VIEW -->
+      <div x-show="gridView && filteredProducts.length > 0"
+           class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <template x-for="(p, i) in paginatedProducts" :key="p.id">
+          <div class="product-card relative group product-grid-item" :style="`animation-delay:${i*0.05}s`">
+            <!-- Badge -->
+            <div x-show="p.badge === 'hot'" class="badge-ribbon" style="background:#ef4444">🔥 হট</div>
+            <div x-show="p.badge === 'new'" class="badge-ribbon" style="background:#3b82f6">✨ নতুন</div>
+            <div x-show="p.badge === 'sale'" class="badge-ribbon" style="background:#dc2626">💥 সেল</div>
+            <div x-show="p.badge === 'top'" class="badge-ribbon" style="background:#7d3c18">⭐ টপ</div>
+
+            <!-- Out of stock overlay -->
+            <div x-show="!p.inStock" class="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-2xl">
+              <span class="bg-gray-600 text-white text-xs font-bold px-3 py-1.5 rounded-full">স্টক শেষ</span>
+            </div>
+
+            <!-- Wishlist -->
+            <button @click="toggleWishlist(p.id)"
+                    :class="wishlist.includes(p.id) ? 'active text-red-500':'text-gray-300'"
+                    class="wishlist-btn absolute top-2 left-2 w-8 h-8 bg-white rounded-full shadow flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 text-lg transition-all">
+              ♥
+            </button>
+
+            <!-- Image -->
+            <a href="single-product.html" class="block">
+              <div class="product-img h-36 flex items-center justify-center overflow-hidden">
+                <span class="text-6xl group-hover:scale-110 transition-transform duration-300" x-text="p.icon"></span>
+              </div>
+            </a>
+
+            <!-- Content -->
+            <div class="p-3">
+              <div class="text-[10px] bg-leaf-50 text-leaf-700 inline-block px-2 py-0.5 rounded-full font-medium mb-1" x-text="p.tag"></div>
+              <a href="single-product.html">
+                <h3 class="font-semibold text-leaf-900 text-sm leading-snug hover:text-leaf-600 transition-colors" x-text="p.name"></h3>
+              </a>
+
+              <!-- Rating -->
+              <div class="flex items-center gap-1 mt-1.5 mb-2">
+                <div class="stars text-xs" x-text="'★'.repeat(Math.floor(p.rating))+'☆'.repeat(5-Math.floor(p.rating))"></div>
+                <span class="text-[11px] text-gray-400" x-text="'('+p.reviews+')'"></span>
+              </div>
+
+              <!-- Price -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="font-bold text-earth-700" x-text="'৳'+p.price.toLocaleString('bn-BD')"></span>
+                  <span x-show="p.oldPrice" class="text-gray-400 text-xs line-through ml-1" x-text="'৳'+p.oldPrice"></span>
+                </div>
+                <span x-show="p.oldPrice" class="text-xs bg-red-50 text-red-600 font-bold px-1.5 py-0.5 rounded-md"
+                      x-text="'-'+Math.round((p.oldPrice-p.price)/p.oldPrice*100)+'%'"></span>
+              </div>
+
+              <button @click="addToCart(p)"
+                      :disabled="!p.inStock"
+                      :class="addedId===p.id ? 'bg-leaf-500':'bg-gradient-to-r from-leaf-700 to-leaf-500'"
+                      class="w-full mt-2.5 text-white text-xs font-semibold py-2 rounded-xl transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1">
+                <span x-text="addedId===p.id ? '✓ যোগ হয়েছে' : (p.inStock ? '🛒 কার্টে যোগ করুন' : 'স্টক নেই')"></span>
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- LIST VIEW -->
+      <div x-show="!gridView && filteredProducts.length > 0" class="space-y-3">
+        <template x-for="p in paginatedProducts" :key="p.id">
+          <div class="bg-white rounded-2xl border border-leaf-50 flex overflow-hidden hover:border-leaf-200 hover:shadow-md transition-all product-grid-item">
+            <a href="single-product.html" class="block shrink-0">
+              <div class="product-img w-28 h-full flex items-center justify-center">
+                <span class="text-5xl" x-text="p.icon"></span>
+              </div>
+            </a>
+            <div class="flex-1 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex-1">
+                <div class="text-[10px] bg-leaf-50 text-leaf-700 inline-block px-2 py-0.5 rounded-full font-medium mb-1" x-text="p.tag"></div>
+                <a href="single-product.html">
+                  <h3 class="font-semibold text-leaf-900 hover:text-leaf-600 transition-colors" x-text="p.name"></h3>
+                </a>
+                <div class="flex items-center gap-2 mt-1">
+                  <div class="stars text-xs" x-text="'★'.repeat(Math.floor(p.rating))+'☆'.repeat(5-Math.floor(p.rating))"></div>
+                  <span class="text-xs text-gray-400" x-text="'('+p.reviews+' রিভিউ)'"></span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1" x-text="p.description"></p>
+              </div>
+              <div class="flex sm:flex-col items-center sm:items-end gap-3">
+                <div class="text-right">
+                  <div class="font-bold text-earth-700 text-lg" x-text="'৳'+p.price.toLocaleString()"></div>
+                  <div x-show="p.oldPrice" class="text-gray-400 text-xs line-through" x-text="'৳'+p.oldPrice"></div>
+                </div>
+                <button @click="addToCart(p)"
+                        :class="addedId===p.id ? 'bg-leaf-500':'bg-leaf-600 hover:bg-leaf-700'"
+                        class="text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors whitespace-nowrap">
+                  <span x-text="addedId===p.id ? '✓ যোগ হয়েছে' : '🛒 কার্টে যোগ'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- PAGINATION -->
+      <div x-show="totalPages > 1" class="flex items-center justify-center gap-2 mt-10">
+        <button @click="prevPage()" :disabled="currentPage===1"
+                class="w-10 h-10 rounded-xl border border-leaf-200 flex items-center justify-center text-leaf-700 hover:bg-leaf-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">‹</button>
+        <template x-for="p in totalPages">
+          <button @click="currentPage=p;window.scrollTo({top:300,behavior:'smooth'})"
+                  :class="currentPage===p ? 'bg-leaf-600 text-white':'bg-white text-leaf-700 hover:bg-leaf-50 border border-leaf-200'"
+                  class="w-10 h-10 rounded-xl flex items-center justify-center font-medium text-sm transition-colors"
+                  x-text="p"></button>
+        </template>
+        <button @click="nextPage()" :disabled="currentPage===totalPages"
+                class="w-10 h-10 rounded-xl border border-leaf-200 flex items-center justify-center text-leaf-700 hover:bg-leaf-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">›</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ══ MOBILE FILTER DRAWER ══ -->
+<div x-show="mobileFilter" x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     class="fixed inset-0 bg-black/50 z-[60] lg:hidden" @click="mobileFilter=false">
+</div>
+<div x-show="mobileFilter" x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+     class="fixed right-0 top-0 bottom-0 w-72 bg-white z-[70] overflow-y-auto p-5 lg:hidden shadow-2xl">
+  <div class="flex items-center justify-between mb-5">
+    <h3 class="font-bold text-leaf-900 text-lg">⚙️ ফিল্টার</h3>
+    <button @click="mobileFilter=false" class="w-8 h-8 bg-leaf-50 rounded-lg flex items-center justify-center text-leaf-700 font-bold">✕</button>
+  </div>
+
+  <div class="space-y-6">
+    <div>
+      <h4 class="font-semibold text-leaf-900 text-sm mb-3">💰 মূল্য সীমা (সর্বোচ্চ)</h4>
+      <input type="range" x-model="maxPrice" min="0" max="10000" step="100" @input="filterProducts()" class="range-slider w-full mb-1" />
+      <div class="text-sm font-semibold text-leaf-700">৳<span x-text="maxPrice"></span></div>
+    </div>
+    <div>
+      <h4 class="font-semibold text-leaf-900 text-sm mb-3">⭐ ন্যূনতম রেটিং</h4>
+      <div class="space-y-2">
+        <template x-for="r in [5,4,3,0]">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="mob-rating" :value="r" x-model="minRating" @change="filterProducts()" class="accent-leaf-600"/>
+            <span class="text-sm" x-text="r > 0 ? '★'.repeat(r)+' ও উপরে' : 'সব রেটিং'"></span>
+          </label>
+        </template>
+      </div>
+    </div>
+    <div>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" x-model="inStockOnly" @change="filterProducts()" class="accent-leaf-600 w-4 h-4"/>
+        <span class="text-sm">শুধু স্টকে আছে</span>
+      </label>
+    </div>
+    <div class="flex gap-2">
+      <button @click="resetFilters();mobileFilter=false" class="flex-1 py-2.5 border border-red-300 text-red-500 rounded-xl text-sm font-medium">রিসেট</button>
+      <button @click="mobileFilter=false" class="flex-1 py-2.5 bg-leaf-600 text-white rounded-xl text-sm font-semibold">প্রয়োগ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CART TOAST ══ -->
+<div x-show="showToast" x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-4"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-end="opacity-0 translate-y-4"
+     class="cart-toast">
+  ✅ পণ্যটি কার্টে যোগ হয়েছে!
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer class="bg-leaf-900 text-white pt-10 pb-6 mt-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-xl">🌿</div>
+          <div class="font-serif font-bold">কৃষি বাজার</div>
+        </div>
+        <p class="text-white/40 text-xs leading-relaxed">২০১৭ সাল থেকে বাংলাদেশের কৃষকদের পাশে।</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">পেজসমূহ</h4>
+        <ul class="space-y-1.5">
+          <li><a href="index.html"   class="text-white/45 text-xs hover:text-white transition-colors">হোম</a></li>
+          <li><a href="about.html"   class="text-white/45 text-xs hover:text-white transition-colors">আমাদের সম্পর্কে</a></li>
+          <li><a href="shop.html"    class="text-white/45 text-xs hover:text-white transition-colors">শপ</a></li>
+          <li><a href="blog.html"    class="text-white/45 text-xs hover:text-white transition-colors">ব্লগ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">সাপোর্ট</h4>
+        <ul class="space-y-1.5">
+          <li><a href="faq.html"           class="text-white/45 text-xs hover:text-white transition-colors">সাধারণ প্রশ্ন</a></li>
+          <li><a href="refund-policy.html" class="text-white/45 text-xs hover:text-white transition-colors">রিফান্ড নীতি</a></li>
+          <li><a href="terms.html"         class="text-white/45 text-xs hover:text-white transition-colors">শর্তাবলী</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">যোগাযোগ</h4>
+        <p class="text-white/45 text-xs">📞 ০১৯০৮-৫৯৭৪৭০</p>
+      </div>
+    </div>
+    <div class="pt-5 text-center">
+      <p class="text-white/30 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/01908597470" target="_blank"
+   class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-xl hover:bg-green-600 hover:scale-110 transition-all z-50">💬</a>
+
+<script>
+function shopApp() {
+  return {
+    scrolled: false,
+    mobileMenu: false,
+    mobileFilter: false,
+    gridView: true,
+    searchQuery: '',
+    sortBy: 'default',
+    maxPrice: 10000,
+    minRating: 0,
+    inStockOnly: false,
+    selectedTags: [],
+    activeCategory: 'all',
+    cartCount: 3,
+    wishlist: [],
+    addedId: null,
+    showToast: false,
+    currentPage: 1,
+    perPage: 9,
+
+    categories: [
+      { id:'all',        icon:'🌿', name:'সব পণ্য' },
+      { id:'seed',       icon:'🌱', name:'বীজ' },
+      { id:'fertilizer', icon:'🌿', name:'সার' },
+      { id:'poultry',    icon:'🐓', name:'পশু-পাখি' },
+      { id:'vegetable',  icon:'🥦', name:'সবজি' },
+      { id:'fruit',      icon:'🍎', name:'ফলমূল' },
+      { id:'machinery',  icon:'🚜', name:'যন্ত্রপাতি' },
+      { id:'honey',      icon:'🍯', name:'মধু' },
+      { id:'mushroom',   icon:'🍄', name:'মাশরুম' },
+      { id:'rooftop',    icon:'🏡', name:'ছাদ বাগান' },
+    ],
+
+    allTags: ['জৈব','বিষমুক্ত','উচ্চফলনশীল','দেশি','খাঁটি','অর্গানিক'],
+
+    allProducts: [
+      { id:1,  name:'দেশি মুরগি (জীবন্ত)',      icon:'🐓', cat:'poultry',    price:380, oldPrice:450, tag:'বেস্ট সেলার', badge:'hot',  rating:4.8, reviews:243, inStock:true,  tags:['দেশি'],        description:'তাজা ও স্বাস্থ্যকর দেশি মুরগি, সরাসরি খামার থেকে।' },
+      { id:2,  name:'খাঁটি সরিষার তেল (১লি)',   icon:'🫙', cat:'honey',     price:280, oldPrice:320, tag:'অর্গানিক',   badge:'new',  rating:4.9, reviews:187, inStock:true,  tags:['খাঁটি','জৈব'],  description:'ঐতিহ্যবাহী ঘানি থেকে তৈরি খাঁটি সরিষার তেল।' },
+      { id:3,  name:'জৈব সার (৫ কেজি)',          icon:'🌿', cat:'fertilizer',price:180, oldPrice:220, tag:'সেরা মান',   badge:'',     rating:4.7, reviews:312, inStock:true,  tags:['জৈব','অর্গানিক'], description:'প্রাকৃতিক উপাদানে তৈরি জৈব সার, পরিবেশবান্ধব।' },
+      { id:4,  name:'হাইব্রিড টমেটো বীজ',       icon:'🍅', cat:'seed',      price:95,  oldPrice:120, tag:'উচ্চফলনশীল',badge:'sale', rating:4.6, reviews:98,  inStock:true,  tags:['উচ্চফলনশীল'],   description:'উচ্চফলনশীল হাইব্রিড টমেটো বীজ, মৌসুমের সেরা পছন্দ।' },
+      { id:5,  name:'রানিং পাম্প (১HP)',          icon:'⚙️', cat:'machinery', price:5800,oldPrice:6500,tag:'টেকসই',     badge:'',     rating:4.5, reviews:67,  inStock:true,  tags:[],               description:'শক্তি সাশ্রয়ী ও দীর্ঘস্থায়ী পানির পাম্প।' },
+      { id:6,  name:'সুন্দরবনের খাঁটি মধু',      icon:'🍯', cat:'honey',     price:650, oldPrice:750, tag:'সুন্দরবনের', badge:'top',  rating:5.0, reviews:421, inStock:true,  tags:['খাঁটি'],        description:'সুন্দরবন থেকে সংগৃহীত ১০০% খাঁটি মধু।' },
+      { id:7,  name:'দেশি ধান বীজ (কেজি)',       icon:'🌾', cat:'seed',      price:140, oldPrice:null,tag:'উচ্চফলনশীল',badge:'',     rating:4.4, reviews:55,  inStock:true,  tags:['দেশি','উচ্চফলনশীল'], description:'উন্নত জাতের দেশি ধান বীজ, বন্যা সহনশীল।' },
+      { id:8,  name:'মাশরুম স্পন প্যাকেজ',       icon:'🍄', cat:'mushroom',  price:350, oldPrice:420, tag:'শখের চাষ',  badge:'new',  rating:4.7, reviews:139, inStock:true,  tags:['জৈব'],          description:'ঘরে বসে মাশরুম চাষের সম্পূর্ণ কিট।' },
+      { id:9,  name:'ড্রিপ সেচ সিস্টেম',         icon:'💧', cat:'machinery', price:2200,oldPrice:2800,tag:'পানি সাশ্রয়', badge:'',   rating:4.6, reviews:89,  inStock:true,  tags:[],               description:'স্বয়ংক্রিয় ড্রিপ ইরিগেশন সিস্টেম।' },
+      { id:10, name:'ছাদ বাগানের মাটি (১০কেজি)', icon:'🪴', cat:'rooftop',   price:320, oldPrice:380, tag:'ছাদ বাগান', badge:'',     rating:4.5, reviews:76,  inStock:true,  tags:['জৈব'],          description:'ছাদ বাগানের জন্য বিশেষভাবে প্রস্তুত পুষ্টিকর মাটি।' },
+      { id:11, name:'দেশি হাঁসের বাচ্চা (৫টি)',  icon:'🦆', cat:'poultry',   price:750, oldPrice:900, tag:'দেশি',      badge:'',     rating:4.3, reviews:44,  inStock:false, tags:['দেশি'],         description:'সুস্থ ও রোগমুক্ত দেশি হাঁসের বাচ্চা।' },
+      { id:12, name:'কলার চারা (রবি)',            icon:'🍌', cat:'fruit',     price:120, oldPrice:null,tag:'ফলের চারা', badge:'new',  rating:4.8, reviews:63,  inStock:true,  tags:[],               description:'রবি জাতের কলার চারা, দ্রুত ফলনশীল।' },
+    ],
+
+    filteredProducts: [],
+
+    get paginatedProducts() {
+      const start = (this.currentPage - 1) * this.perPage;
+      return this.filteredProducts.slice(start, start + this.perPage);
+    },
+    get totalPages() {
+      return Math.ceil(this.filteredProducts.length / this.perPage);
+    },
+
+    selectCategory(id) {
+      this.activeCategory = id;
+      this.currentPage = 1;
+      this.filterProducts();
+    },
+
+    filterProducts() {
+      this.currentPage = 1;
+      let results = [...this.allProducts];
+
+      if (this.activeCategory !== 'all') {
+        results = results.filter(p => p.cat === this.activeCategory);
+      }
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase();
+        results = results.filter(p => p.name.toLowerCase().includes(q) || p.tag.toLowerCase().includes(q));
+      }
+      if (this.maxPrice < 10000) {
+        results = results.filter(p => p.price <= this.maxPrice);
+      }
+      if (this.minRating > 0) {
+        results = results.filter(p => p.rating >= this.minRating);
+      }
+      if (this.inStockOnly) {
+        results = results.filter(p => p.inStock);
+      }
+      if (this.selectedTags.length > 0) {
+        results = results.filter(p => this.selectedTags.some(t => p.tags.includes(t)));
+      }
+
+      // Sort
+      if (this.sortBy === 'price_asc')  results.sort((a,b) => a.price - b.price);
+      if (this.sortBy === 'price_desc') results.sort((a,b) => b.price - a.price);
+      if (this.sortBy === 'rating')     results.sort((a,b) => b.rating - a.rating);
+      if (this.sortBy === 'newest')     results.sort((a,b) => b.id - a.id);
+
+      this.filteredProducts = results;
+    },
+
+    toggleTag(tag) {
+      if (this.selectedTags.includes(tag)) {
+        this.selectedTags = this.selectedTags.filter(t => t !== tag);
+      } else {
+        this.selectedTags.push(tag);
+      }
+      this.filterProducts();
+    },
+
+    resetFilters() {
+      this.searchQuery = '';
+      this.sortBy = 'default';
+      this.maxPrice = 10000;
+      this.minRating = 0;
+      this.inStockOnly = false;
+      this.selectedTags = [];
+      this.activeCategory = 'all';
+      this.currentPage = 1;
+      this.filterProducts();
+    },
+
+    toggleWishlist(id) {
+      if (this.wishlist.includes(id)) {
+        this.wishlist = this.wishlist.filter(w => w !== id);
+      } else {
+        this.wishlist.push(id);
+      }
+    },
+
+    addToCart(p) {
+      if (!p.inStock) return;
+      this.cartCount++;
+      this.addedId = p.id;
+      this.showToast = true;
+      setTimeout(() => { this.addedId = null; }, 1800);
+      setTimeout(() => { this.showToast = false; }, 2500);
+    },
+
+    prevPage() { if (this.currentPage > 1) { this.currentPage--; window.scrollTo({top:300,behavior:'smooth'}); } },
+    nextPage() { if (this.currentPage < this.totalPages) { this.currentPage++; window.scrollTo({top:300,behavior:'smooth'}); } },
+
+    init() {
+      this.filterProducts();
+    }
+  }
+}
+</script>
+
+</body>
+</html>
