@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="checkoutApp()" @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>চেকআউট — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: { serif: ['Noto Serif Bengali','serif'] },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3,h4{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; }
+    .nav-glass{ backdrop-filter:blur(16px); }
+    .section-divider{ width:56px;height:4px;background:linear-gradient(90deg,#2e9c2e,#b8692a);border-radius:2px; }
+
+    /* Form Styles */
+    .form-label{ font-size:13px; font-weight:600; color:#104810; margin-bottom:6px; display:block; }
+    .form-input{
+      width:100%; padding:12px 16px; border-radius:14px;
+      border:2px solid #d6f5d6; background:#f9fffe;
+      font-size:14px; color:#1a1a1a;
+      transition:all .2s ease; outline:none;
+    }
+    .form-input:focus{ border-color:#1e7e1e; background:white; box-shadow:0 0 0 4px rgba(30,126,30,.08); }
+    .form-input.error{ border-color:#ef4444; background:#fff5f5; }
+    .form-input::placeholder{ color:#9ca3af; }
+    .form-select{ appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231e7e1e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; }
+    .error-msg{ font-size:11px; color:#ef4444; margin-top:4px; }
+
+    /* Payment Method Cards */
+    .payment-card{
+      border:2px solid #d6f5d6; border-radius:16px; padding:16px;
+      cursor:pointer; transition:all .2s ease; background:white;
+    }
+    .payment-card:hover{ border-color:#74d474; background:#f9fffe; }
+    .payment-card.selected{ border-color:#1e7e1e; background:#f0faf0; }
+
+    /* Step indicator */
+    .step-card{ background:white; border-radius:20px; border:1.5px solid #f0faf0; overflow:hidden; }
+    .step-header{
+      padding:16px 20px; display:flex; align-items:center; gap:12px;
+      cursor:pointer; transition:background .2s ease;
+    }
+    .step-header:hover{ background:#f9fffe; }
+    .step-num{
+      width:32px; height:32px; border-radius:10px; font-weight:800; font-size:14px;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .step-num.done{ background:#1e7e1e; color:white; }
+    .step-num.active{ background:#1e7e1e; color:white; box-shadow:0 0 0 4px rgba(30,126,30,.2); }
+    .step-num.pending{ background:#f0faf0; color:#9ca3af; border:2px solid #d6f5d6; }
+
+    /* Order summary */
+    .summary-box{ background:white; border-radius:24px; border:1.5px solid #f0faf0; position:sticky; top:120px; }
+
+    .place-order-btn{
+      background:linear-gradient(135deg,#9a501e,#c98840);
+      transition:all .3s ease;
+    }
+    .place-order-btn:hover{ background:linear-gradient(135deg,#7d3c18,#9a501e); transform:translateY(-2px); box-shadow:0 10px 24px rgba(154,80,30,.4); }
+
+    /* Success Overlay */
+    .success-overlay{
+      position:fixed; inset:0; background:rgba(10,48,10,.92);
+      z-index:200; display:flex; align-items:center; justify-content:center;
+      backdrop-filter:blur(8px);
+    }
+    .success-card{ background:white; border-radius:28px; max-width:440px; width:90%; padding:40px; text-align:center; }
+
+    @keyframes confetti{ 0%{transform:translateY(-20px) rotate(0)} 100%{transform:translateY(100vh) rotate(720deg); opacity:0} }
+    .confetti-piece{ position:fixed; top:-10px; width:8px; height:8px; border-radius:2px; animation:confetti 3s ease forwards; pointer-events:none; }
+
+    .marquee-track{ display:flex; animation:marquee 28s linear infinite; white-space:nowrap; }
+    @keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes fadeUp{ from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes popIn{ 0%{transform:scale(.7);opacity:0} 80%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+    .fade-up{ animation:fadeUp .4s ease forwards; }
+    .pop-in{ animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+    /* Radio custom */
+    .radio-custom{ width:18px;height:18px;border-radius:50%;border:2px solid #a8e8a8;background:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s ease; }
+    .radio-custom.checked{ border-color:#1e7e1e;background:#1e7e1e; }
+    .radio-custom.checked::after{ content:'';width:6px;height:6px;background:white;border-radius:50%; }
+  </style>
+</head>
+
+<body class="overflow-x-hidden">
+
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div class="bg-leaf-800 text-white text-xs py-2 overflow-hidden">
+  <div class="marquee-track gap-12">
+    <span class="px-8">🔒 ১০০% নিরাপদ পেমেন্ট</span>
+    <span class="px-8">🎁 ৫০০ টাকার উপরে ফ্রি ডেলিভারি</span>
+    <span class="px-8">↩️ ৭ দিনের রিটার্ন গ্যারান্টি</span>
+    <span class="px-8">📞 সাহায্য: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">🔒 ১০০% নিরাপদ পেমেন্ট</span>
+    <span class="px-8">🎁 ৫০০ টাকার উপরে ফ্রি ডেলিভারি</span>
+    <span class="px-8">↩️ ৭ দিনের রিটার্ন গ্যারান্টি</span>
+    <span class="px-8">📞 সাহায্য: ০১৯০৮-৫৯৭৪৭০</span>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav :class="scrolled ? 'bg-white/95 shadow-md nav-glass':'bg-white'"
+     class="sticky top-0 z-50 border-b border-leaf-100 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16">
+      <a href="index.html" class="flex items-center gap-2">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow">
+          <span class="text-xl">🌿</span>
+        </div>
+        <div class="hidden sm:block">
+          <div class="font-serif font-bold text-leaf-800 text-lg leading-none">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+      <!-- Secure checkout badge -->
+      <div class="hidden md:flex items-center gap-2 bg-leaf-50 px-4 py-2 rounded-xl border border-leaf-100">
+        <span class="text-leaf-600">🔒</span>
+        <span class="text-sm font-semibold text-leaf-800">নিরাপদ চেকআউট</span>
+      </div>
+      <a href="cart.html" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+        <span class="text-xl">🛒</span>
+        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">৩</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ PROGRESS BAR ══ -->
+<div class="bg-white border-b border-leaf-50 py-4">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center">
+      <div class="flex flex-col items-center gap-1 flex-1">
+        <div class="w-9 h-9 rounded-full bg-leaf-100 text-leaf-500 flex items-center justify-center font-bold text-sm border-2 border-leaf-300">✓</div>
+        <span class="text-xs text-leaf-600 font-medium">কার্ট</span>
+      </div>
+      <div class="flex-1 h-0.5 bg-leaf-400 -mt-4 mx-1"></div>
+      <div class="flex flex-col items-center gap-1 flex-1">
+        <div class="w-9 h-9 rounded-full bg-leaf-600 text-white flex items-center justify-center font-bold text-sm shadow-md">২</div>
+        <span class="text-xs text-leaf-700 font-bold">চেকআউট</span>
+      </div>
+      <div class="flex-1 h-0.5 bg-gray-200 -mt-4 mx-1"></div>
+      <div class="flex flex-col items-center gap-1 flex-1">
+        <div class="w-9 h-9 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center font-bold text-sm border-2 border-gray-200">৩</div>
+        <span class="text-xs text-gray-300">নিশ্চিতকরণ</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ══ -->
+<div class="bg-white border-b border-leaf-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-xs text-gray-400">
+    <a href="index.html" class="hover:text-leaf-600">হোম</a><span>›</span>
+    <a href="cart.html"  class="hover:text-leaf-600">কার্ট</a><span>›</span>
+    <span class="text-leaf-700 font-medium">চেকআউট</span>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-32 md:pb-10">
+  <div class="grid lg:grid-cols-5 gap-8">
+
+    <!-- ── LEFT: Form Steps ── -->
+    <div class="lg:col-span-3 space-y-5 fade-up">
+
+      <!-- ─── STEP 1: Contact Info ─── -->
+      <div class="step-card">
+        <div class="step-header" @click="currentStep = currentStep===1 ? 0:1">
+          <div class="step-num" :class="step1Done ? 'done' : (currentStep===1 ? 'active':'pending')">
+            <span x-text="step1Done ? '✓' : '১'"></span>
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-leaf-900">যোগাযোগের তথ্য</div>
+            <div x-show="step1Done && currentStep!==1" class="text-xs text-gray-400 mt-0.5" x-text="form.name + ' • ' + form.phone"></div>
+          </div>
+          <span :class="currentStep===1 ? 'rotate-180':''" class="transition-transform text-leaf-400">▼</span>
+        </div>
+
+        <div x-show="currentStep===1" x-transition class="px-5 pb-6 border-t border-leaf-50">
+          <div class="grid sm:grid-cols-2 gap-4 mt-5">
+            <div>
+              <label class="form-label">পূর্ণ নাম *</label>
+              <input x-model="form.name" type="text" placeholder="আপনার পূর্ণ নাম"
+                     :class="errors.name ? 'error':''"
+                     class="form-input" @blur="validateStep1()"/>
+              <p x-show="errors.name" class="error-msg" x-text="errors.name"></p>
+            </div>
+            <div>
+              <label class="form-label">মোবাইল নম্বর *</label>
+              <input x-model="form.phone" type="tel" placeholder="০১XXXXXXXXX"
+                     :class="errors.phone ? 'error':''"
+                     class="form-input" @blur="validateStep1()"/>
+              <p x-show="errors.phone" class="error-msg" x-text="errors.phone"></p>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="form-label">ইমেইল (ঐচ্ছিক)</label>
+              <input x-model="form.email" type="email" placeholder="example@email.com" class="form-input"/>
+            </div>
+          </div>
+          <button @click="if(validateStep1()){ step1Done=true; currentStep=2; }"
+                  class="mt-5 px-6 py-3 bg-leaf-600 text-white font-bold rounded-xl hover:bg-leaf-700 transition-colors text-sm">
+            পরবর্তী ধাপ →
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── STEP 2: Delivery Address ─── -->
+      <div class="step-card" :class="!step1Done ? 'opacity-60 pointer-events-none':''">
+        <div class="step-header" @click="step1Done && (currentStep = currentStep===2 ? 0:2)">
+          <div class="step-num" :class="step2Done ? 'done':(currentStep===2 ? 'active':'pending')">
+            <span x-text="step2Done ? '✓' : '২'"></span>
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-leaf-900">ডেলিভারি ঠিকানা</div>
+            <div x-show="step2Done && currentStep!==2" class="text-xs text-gray-400 mt-0.5" x-text="form.address + ', ' + form.district"></div>
+          </div>
+          <span :class="currentStep===2 ? 'rotate-180':''" class="transition-transform text-leaf-400">▼</span>
+        </div>
+
+        <div x-show="currentStep===2" x-transition class="px-5 pb-6 border-t border-leaf-50">
+          <div class="grid sm:grid-cols-2 gap-4 mt-5">
+            <div class="sm:col-span-2">
+              <label class="form-label">পূর্ণ ঠিকানা *</label>
+              <textarea x-model="form.address" rows="2"
+                        placeholder="বাসা/ফ্ল্যাট নম্বর, রাস্তা, এলাকা..."
+                        :class="errors.address ? 'error':''"
+                        class="form-input resize-none" @blur="validateStep2()"></textarea>
+              <p x-show="errors.address" class="error-msg" x-text="errors.address"></p>
+            </div>
+            <div>
+              <label class="form-label">জেলা *</label>
+              <select x-model="form.district" :class="errors.district ? 'error':''"
+                      class="form-input form-select" @change="validateStep2()">
+                <option value="">জেলা বেছে নিন</option>
+                <template x-for="d in districts">
+                  <option :value="d" x-text="d"></option>
+                </template>
+              </select>
+              <p x-show="errors.district" class="error-msg" x-text="errors.district"></p>
+            </div>
+            <div>
+              <label class="form-label">উপজেলা / থানা</label>
+              <input x-model="form.upazila" type="text" placeholder="উপজেলা / থানার নাম" class="form-input"/>
+            </div>
+            <div>
+              <label class="form-label">পোস্ট কোড</label>
+              <input x-model="form.postcode" type="text" placeholder="যেমন: ১২০৫" class="form-input"/>
+            </div>
+            <div>
+              <label class="form-label">বিকল্প নম্বর (ঐচ্ছিক)</label>
+              <input x-model="form.altPhone" type="tel" placeholder="০১XXXXXXXXX" class="form-input"/>
+            </div>
+          </div>
+
+          <!-- Delivery type -->
+          <div class="mt-5">
+            <label class="form-label">ডেলিভারি ধরন</label>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div @click="form.deliveryType='standard'"
+                   :class="form.deliveryType==='standard' ? 'selected':''"
+                   class="payment-card">
+                <div class="flex items-center gap-3">
+                  <div class="radio-custom" :class="form.deliveryType==='standard' ? 'checked':''"></div>
+                  <div>
+                    <div class="font-bold text-leaf-900 text-sm">🚚 সাধারণ ডেলিভারি</div>
+                    <div class="text-xs text-gray-400 mt-0.5">৩-৫ কার্যদিবস • বিনামূল্যে (৫০০+ টাকায়)</div>
+                  </div>
+                </div>
+              </div>
+              <div @click="form.deliveryType='express'"
+                   :class="form.deliveryType==='express' ? 'selected':''"
+                   class="payment-card">
+                <div class="flex items-center gap-3">
+                  <div class="radio-custom" :class="form.deliveryType==='express' ? 'checked':''"></div>
+                  <div>
+                    <div class="font-bold text-leaf-900 text-sm">⚡ এক্সপ্রেস ডেলিভারি</div>
+                    <div class="text-xs text-gray-400 mt-0.5">১-২ কার্যদিবস • অতিরিক্ত ৳১৫০</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Note -->
+          <div class="mt-4">
+            <label class="form-label">অতিরিক্ত নোট (ঐচ্ছিক)</label>
+            <textarea x-model="form.note" rows="2" placeholder="ডেলিভারির সময় কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
+                      class="form-input resize-none"></textarea>
+          </div>
+
+          <button @click="if(validateStep2()){ step2Done=true; currentStep=3; }"
+                  class="mt-5 px-6 py-3 bg-leaf-600 text-white font-bold rounded-xl hover:bg-leaf-700 transition-colors text-sm">
+            পরবর্তী ধাপ →
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── STEP 3: Payment ─── -->
+      <div class="step-card" :class="!step2Done ? 'opacity-60 pointer-events-none':''">
+        <div class="step-header" @click="step2Done && (currentStep = currentStep===3 ? 0:3)">
+          <div class="step-num" :class="currentStep===3 ? 'active':'pending'">৩</div>
+          <div class="flex-1">
+            <div class="font-bold text-leaf-900">পেমেন্ট পদ্ধতি</div>
+            <div x-show="currentStep!==3 && form.paymentMethod" class="text-xs text-gray-400 mt-0.5" x-text="paymentLabel"></div>
+          </div>
+          <span :class="currentStep===3 ? 'rotate-180':''" class="transition-transform text-leaf-400">▼</span>
+        </div>
+
+        <div x-show="currentStep===3" x-transition class="px-5 pb-6 border-t border-leaf-50">
+          <div class="grid sm:grid-cols-2 gap-3 mt-5">
+
+            <!-- bKash -->
+            <div @click="form.paymentMethod='bkash'"
+                 :class="form.paymentMethod==='bkash' ? 'selected':''"
+                 class="payment-card">
+              <div class="flex items-center gap-3">
+                <div class="radio-custom" :class="form.paymentMethod==='bkash' ? 'checked':''"></div>
+                <div class="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center font-black text-pink-600 text-sm shrink-0">bK</div>
+                <div>
+                  <div class="font-bold text-leaf-900 text-sm">bKash</div>
+                  <div class="text-xs text-gray-400">মোবাইল ব্যাংকিং</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nagad -->
+            <div @click="form.paymentMethod='nagad'"
+                 :class="form.paymentMethod==='nagad' ? 'selected':''"
+                 class="payment-card">
+              <div class="flex items-center gap-3">
+                <div class="radio-custom" :class="form.paymentMethod==='nagad' ? 'checked':''"></div>
+                <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center font-black text-orange-600 text-xs shrink-0">Ng</div>
+                <div>
+                  <div class="font-bold text-leaf-900 text-sm">Nagad</div>
+                  <div class="text-xs text-gray-400">মোবাইল ব্যাংকিং</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rocket -->
+            <div @click="form.paymentMethod='rocket'"
+                 :class="form.paymentMethod==='rocket' ? 'selected':''"
+                 class="payment-card">
+              <div class="flex items-center gap-3">
+                <div class="radio-custom" :class="form.paymentMethod==='rocket' ? 'checked':''"></div>
+                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center font-black text-purple-600 text-xs shrink-0">Rkt</div>
+                <div>
+                  <div class="font-bold text-leaf-900 text-sm">Rocket</div>
+                  <div class="text-xs text-gray-400">DBBL মোবাইল</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card -->
+            <div @click="form.paymentMethod='card'"
+                 :class="form.paymentMethod==='card' ? 'selected':''"
+                 class="payment-card">
+              <div class="flex items-center gap-3">
+                <div class="radio-custom" :class="form.paymentMethod==='card' ? 'checked':''"></div>
+                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 text-xl shrink-0">💳</div>
+                <div>
+                  <div class="font-bold text-leaf-900 text-sm">কার্ড পেমেন্ট</div>
+                  <div class="text-xs text-gray-400">VISA / Mastercard</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COD -->
+            <div @click="form.paymentMethod='cod'"
+                 :class="form.paymentMethod==='cod' ? 'selected':''"
+                 class="payment-card sm:col-span-2">
+              <div class="flex items-center gap-3">
+                <div class="radio-custom" :class="form.paymentMethod==='cod' ? 'checked':''"></div>
+                <div class="w-10 h-10 bg-leaf-100 rounded-xl flex items-center justify-center text-leaf-600 text-xl shrink-0">💵</div>
+                <div>
+                  <div class="font-bold text-leaf-900 text-sm">ক্যাশ অন ডেলিভারি</div>
+                  <div class="text-xs text-gray-400">পণ্য পেয়ে টাকা দিন — সারা বাংলাদেশে পাওয়া যায়</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- bKash / Nagad / Rocket number input -->
+          <div x-show="['bkash','nagad','rocket'].includes(form.paymentMethod)" x-transition class="mt-4 bg-leaf-50 rounded-2xl p-4 border border-leaf-100">
+            <label class="form-label" x-text="paymentLabel + ' নম্বর *'"></label>
+            <input x-model="form.mobilePayNum" type="tel" placeholder="০১XXXXXXXXX" class="form-input"/>
+            <p class="text-xs text-gray-400 mt-2">💡 অর্ডার নিশ্চিত হলে আপনার নম্বরে পেমেন্ট রিকোয়েস্ট পাঠানো হবে।</p>
+          </div>
+
+          <!-- Card fields -->
+          <div x-show="form.paymentMethod==='card'" x-transition class="mt-4 bg-blue-50 rounded-2xl p-4 border border-blue-100 space-y-4">
+            <div>
+              <label class="form-label">কার্ড নম্বর *</label>
+              <input x-model="form.cardNum" type="text" placeholder="XXXX XXXX XXXX XXXX"
+                     @input="form.cardNum = form.cardNum.replace(/\D/g,'').replace(/(\d{4})(?=\d)/g,'$1 ').trim().slice(0,19)"
+                     class="form-input"/>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="form-label">মেয়াদ *</label>
+                <input x-model="form.cardExp" type="text" placeholder="MM/YY"
+                       @input="form.cardExp = form.cardExp.replace(/\D/g,'').replace(/(\d{2})(\d)/,'$1/$2').slice(0,5)"
+                       class="form-input"/>
+              </div>
+              <div>
+                <label class="form-label">CVV *</label>
+                <input x-model="form.cardCvv" type="password" placeholder="•••" maxlength="4" class="form-input"/>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-blue-700">
+              <span>🔒</span> আপনার কার্ডের তথ্য সম্পূর্ণ নিরাপদ ও এনক্রিপ্টেড।
+            </div>
+          </div>
+
+          <!-- COD note -->
+          <div x-show="form.paymentMethod==='cod'" x-transition class="mt-4 bg-leaf-50 rounded-2xl p-4 border border-leaf-100">
+            <div class="flex items-start gap-2">
+              <span class="text-leaf-600">ℹ️</span>
+              <p class="text-xs text-gray-600 leading-relaxed">ডেলিভারির সময় পণ্য বুঝে নিয়ে টাকা পরিশোধ করুন। অতিরিক্ত কোনো চার্জ নেই।</p>
+            </div>
+          </div>
+
+          <p x-show="errors.payment" class="error-msg mt-3" x-text="errors.payment"></p>
+        </div>
+      </div>
+
+      <!-- ─── TERMS ─── -->
+      <div class="bg-white rounded-2xl border border-leaf-100 p-4">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" x-model="form.agreed" class="mt-1 accent-leaf-600 w-4 h-4 shrink-0"/>
+          <span class="text-sm text-gray-600 leading-relaxed">
+            আমি <a href="terms.html" class="text-leaf-600 hover:underline font-medium">শর্তাবলী</a> ও
+            <a href="refund-policy.html" class="text-leaf-600 hover:underline font-medium">রিফান্ড নীতি</a> পড়েছি এবং সম্মত আছি।
+          </span>
+        </label>
+        <p x-show="errors.agreed" class="error-msg mt-2" x-text="errors.agreed"></p>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Order Summary ── -->
+    <div class="lg:col-span-2">
+      <div class="summary-box p-6 fade-up" style="animation-delay:.1s">
+        <h2 class="font-black text-leaf-900 text-lg mb-5 pb-4 border-b border-leaf-100">📋 আপনার অর্ডার</h2>
+
+        <!-- Items -->
+        <div class="space-y-3 mb-5 pb-5 border-b border-leaf-100">
+          <template x-for="item in orderItems" :key="item.id">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-gradient-to-br from-leaf-50 to-leaf-200 rounded-xl flex items-center justify-center text-2xl shrink-0" x-text="item.icon"></div>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-leaf-900 text-xs leading-snug line-clamp-1" x-text="item.name"></div>
+                <div class="text-gray-400 text-xs" x-text="item.variant + ' × ' + item.qty"></div>
+              </div>
+              <div class="font-bold text-earth-700 text-sm shrink-0" x-text="'৳'+(item.price*item.qty).toLocaleString()"></div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Price Breakdown -->
+        <div class="space-y-2.5 text-sm pb-4 border-b border-leaf-100">
+          <div class="flex justify-between text-gray-600">
+            <span>পণ্যের মূল্য</span>
+            <span>৳<span x-text="subtotal.toLocaleString()"></span></span>
+          </div>
+          <div class="flex justify-between text-green-600">
+            <span>মোট সাশ্রয়</span>
+            <span>− ৳<span x-text="discount.toLocaleString()"></span></span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>ডেলিভারি চার্জ
+              <span x-show="form.deliveryType==='express'" class="text-xs text-earth-600">(এক্সপ্রেস)</span>
+            </span>
+            <span x-show="deliveryCharge===0" class="text-leaf-600 font-semibold">ফ্রি 🎉</span>
+            <span x-show="deliveryCharge>0">৳<span x-text="deliveryCharge"></span></span>
+          </div>
+        </div>
+
+        <!-- Grand Total -->
+        <div class="flex justify-between items-center py-4">
+          <span class="font-black text-leaf-900">মোট পরিশোধযোগ্য</span>
+          <span class="font-black text-earth-700 text-2xl">৳<span x-text="grandTotal.toLocaleString()"></span></span>
+        </div>
+
+        <!-- Delivery estimate -->
+        <div class="bg-leaf-50 rounded-xl px-4 py-3 mb-5 flex items-center gap-2 border border-leaf-100">
+          <span class="text-xl">📅</span>
+          <div>
+            <div class="text-xs font-semibold text-leaf-800">আনুমানিক ডেলিভারি</div>
+            <div class="text-xs text-gray-500 mt-0.5" x-text="form.deliveryType==='express' ? '১-২ কার্যদিবস (এক্সপ্রেস)':'৩-৫ কার্যদিবস (সাধারণ)'"></div>
+          </div>
+        </div>
+
+        <!-- Place Order Button -->
+        <button @click="placeOrder()"
+                :disabled="placing"
+                class="place-order-btn w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-center gap-2 shadow-xl">
+          <span x-show="!placing">🛍️ অর্ডার নিশ্চিত করুন</span>
+          <span x-show="placing" class="flex items-center gap-2">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle>
+              <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            প্রক্রিয়া হচ্ছে...
+          </span>
+        </button>
+
+        <!-- Payment Security -->
+        <div class="flex items-center justify-center gap-2 mt-3">
+          <span class="text-leaf-500 text-sm">🔒</span>
+          <span class="text-xs text-gray-400">SSL এনক্রিপ্টেড ও সম্পূর্ণ নিরাপদ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ══ MOBILE BOTTOM BAR ══ -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-leaf-100 px-4 py-3 z-40 md:hidden shadow-lg">
+  <div class="flex items-center gap-3">
+    <div>
+      <div class="text-xs text-gray-400">মোট</div>
+      <div class="font-black text-earth-700 text-lg">৳<span x-text="grandTotal.toLocaleString()"></span></div>
+    </div>
+    <button @click="placeOrder()"
+            class="flex-1 py-3 place-order-btn text-white font-black text-sm rounded-2xl flex items-center justify-center gap-1">
+      🛍️ অর্ডার নিশ্চিত করুন
+    </button>
+  </div>
+</div>
+
+<!-- ══ SUCCESS OVERLAY ══ -->
+<div x-show="orderPlaced" x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     class="success-overlay">
+
+  <!-- Confetti -->
+  <template x-if="orderPlaced">
+    <div>
+      <template x-for="c in confettiPieces">
+        <div class="confetti-piece" :style="c"></div>
+      </template>
+    </div>
+  </template>
+
+  <div class="success-card pop-in">
+    <div class="w-20 h-20 bg-leaf-100 rounded-full flex items-center justify-center text-5xl mx-auto mb-5">✅</div>
+    <h2 class="text-2xl font-black text-leaf-900 mb-2">অর্ডার সফল!</h2>
+    <p class="text-gray-500 text-sm mb-1">অর্ডার নম্বর:</p>
+    <div class="bg-leaf-50 border border-leaf-200 rounded-xl px-4 py-2 inline-block mb-4">
+      <span class="font-black text-leaf-700 text-lg" x-text="'#KB-' + orderId"></span>
+    </div>
+    <p class="text-gray-500 text-sm leading-relaxed mb-6">
+      আপনার অর্ডার পেয়েছি! শীঘ্রই <strong x-text="form.phone"></strong> নম্বরে যোগাযোগ করা হবে।
+      <span x-text="form.deliveryType==='express' ? '১-২ কার্যদিবসের':'৩-৫ কার্যদিবসের'"></span> মধ্যে ডেলিভারি দেওয়া হবে।
+    </p>
+
+    <!-- Order Details quick view -->
+    <div class="bg-leaf-50 rounded-2xl p-4 text-left mb-6 space-y-2">
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-500">নাম</span>
+        <span class="font-semibold text-leaf-900" x-text="form.name"></span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-500">মোবাইল</span>
+        <span class="font-semibold text-leaf-900" x-text="form.phone"></span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-500">মোট</span>
+        <span class="font-black text-earth-700" x-text="'৳'+grandTotal.toLocaleString()"></span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-500">পেমেন্ট</span>
+        <span class="font-semibold text-leaf-900" x-text="paymentLabel"></span>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <a href="index.html" class="flex-1 py-3 border-2 border-leaf-300 text-leaf-700 rounded-xl text-sm font-bold text-center hover:bg-leaf-50 transition-colors">
+        🏠 হোমে যান
+      </a>
+      <a href="shop.html" class="flex-1 py-3 bg-leaf-600 text-white rounded-xl text-sm font-bold text-center hover:bg-leaf-700 transition-colors">
+        🛒 আরও কিনুন
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer class="bg-leaf-900 text-white pt-10 pb-24 md:pb-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-xl">🌿</div>
+          <div class="font-serif font-bold">কৃষি বাজার</div>
+        </div>
+        <p class="text-white/40 text-xs">২০১৭ সাল থেকে কৃষকদের পাশে।</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">পেজসমূহ</h4>
+        <ul class="space-y-1.5">
+          <li><a href="index.html" class="text-white/45 text-xs hover:text-white transition-colors">হোম</a></li>
+          <li><a href="shop.html"  class="text-white/45 text-xs hover:text-white transition-colors">শপ</a></li>
+          <li><a href="about.html" class="text-white/45 text-xs hover:text-white transition-colors">আমাদের সম্পর্কে</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">সাপোর্ট</h4>
+        <ul class="space-y-1.5">
+          <li><a href="faq.html"           class="text-white/45 text-xs hover:text-white transition-colors">সাধারণ প্রশ্ন</a></li>
+          <li><a href="refund-policy.html" class="text-white/45 text-xs hover:text-white transition-colors">রিফান্ড নীতি</a></li>
+          <li><a href="terms.html"         class="text-white/45 text-xs hover:text-white transition-colors">শর্তাবলী</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">যোগাযোগ</h4>
+        <p class="text-white/45 text-xs">📞 ০১৯০৮-৫৯৭৪৭০</p>
+      </div>
+    </div>
+    <div class="pt-5 text-center"><p class="text-white/30 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p></div>
+  </div>
+</footer>
+
+<script>
+function checkoutApp() {
+  return {
+    scrolled: false,
+    currentStep: 1,
+    step1Done: false,
+    step2Done: false,
+    placing: false,
+    orderPlaced: false,
+    orderId: '',
+    confettiPieces: [],
+
+    form: {
+      name:'', phone:'', email:'',
+      address:'', district:'', upazila:'', postcode:'', altPhone:'',
+      deliveryType:'standard', note:'',
+      paymentMethod:'cod',
+      mobilePayNum:'', cardNum:'', cardExp:'', cardCvv:'',
+      agreed: false,
+    },
+
+    errors: {},
+
+    districts: ['ঢাকা','চট্টগ্রাম','রাজশাহী','খুলনা','বরিশাল','সিলেট','রংপুর','ময়মনসিংহ','কুমিল্লা','গাজীপুর','নারায়ণগঞ্জ','টাঙ্গাইল','ফরিদপুর','যশোর','বগুড়া','দিনাজপুর','পাবনা','কিশোরগঞ্জ','নোয়াখালী','ব্রাহ্মণবাড়িয়া','কক্সবাজার','সুনামগঞ্জ','হবিগঞ্জ','মৌলভীবাজার','জামালপুর','নেত্রকোণা','শেরপুর','মাগুরা','নড়াইল','ঝিনাইদহ','কুষ্টিয়া','মেহেরপুর','চুয়াডাঙ্গা','সাতক্ষীরা','বাগেরহাট','পিরোজপুর','ঝালকাঠি','পটুয়াখালী','বরগুনা','ভোলা','লক্ষ্মীপুর','চাঁদপুর','ফেনী','বান্দরবান','খাগড়াছড়ি','রাঙামাটি','নাটোর','চাঁপাইনবাবগঞ্জ','জয়পুরহাট','নওগাঁ','সিরাজগঞ্জ','গাইবান্ধা','কুড়িগ্রাম','লালমনিরহাট','নীলফামারী','পঞ্চগড়','ঠাকুরগাঁও'],
+
+    orderItems: [
+      { id:1, name:'সুন্দরবনের খাঁটি মধু', icon:'🍯', variant:'৫০০ গ্রাম',        price:650, qty:1 },
+      { id:2, name:'জৈব সার',               icon:'🌿', variant:'৫ কেজি প্যাক',     price:180, qty:2 },
+      { id:3, name:'দেশি মুরগি',             icon:'🐓', variant:'১টি (১.২ কেজি)',   price:380, qty:1 },
+    ],
+
+    get subtotal() { return this.orderItems.reduce((s,i)=>s+i.price*i.qty, 0); },
+    get discount()  { return 220; },
+    get deliveryCharge() {
+      if (this.form.deliveryType === 'express') return 150;
+      return this.subtotal >= 500 ? 0 : 70;
+    },
+    get grandTotal() { return this.subtotal + this.deliveryCharge; },
+
+    get paymentLabel() {
+      const map = { bkash:'bKash', nagad:'Nagad', rocket:'Rocket', card:'কার্ড পেমেন্ট', cod:'ক্যাশ অন ডেলিভারি' };
+      return map[this.form.paymentMethod] || '';
+    },
+
+    validateStep1() {
+      this.errors = {};
+      if (!this.form.name.trim())   this.errors.name  = 'নাম আবশ্যক';
+      if (!this.form.phone.match(/^01[3-9]\d{8}$/)) this.errors.phone = 'সঠিক মোবাইল নম্বর দিন';
+      return Object.keys(this.errors).length === 0;
+    },
+
+    validateStep2() {
+      this.errors = {};
+      if (!this.form.address.trim())  this.errors.address  = 'ঠিকানা আবশ্যক';
+      if (!this.form.district)        this.errors.district = 'জেলা বেছে নিন';
+      return Object.keys(this.errors).length === 0;
+    },
+
+    placeOrder() {
+      this.errors = {};
+      if (!this.step1Done) { this.currentStep=1; return; }
+      if (!this.step2Done) { this.currentStep=2; return; }
+      if (!this.form.paymentMethod) { this.errors.payment='পেমেন্ট পদ্ধতি বেছে নিন'; this.currentStep=3; return; }
+      if (!this.form.agreed) { this.errors.agreed='শর্তাবলীতে সম্মত হওয়া আবশ্যক'; return; }
+
+      this.placing = true;
+      setTimeout(() => {
+        this.placing = false;
+        this.orderId = Math.floor(100000 + Math.random() * 900000).toString();
+        this.orderPlaced = true;
+        this.generateConfetti();
+      }, 1800);
+    },
+
+    generateConfetti() {
+      const colors = ['#1e7e1e','#b8692a','#f59e0b','#3b82f6','#ef4444','#8b5cf6'];
+      this.confettiPieces = Array.from({length:40}, (_,i) => {
+        const color = colors[i % colors.length];
+        const left  = Math.random()*100;
+        const delay = Math.random()*1.5;
+        const size  = 6 + Math.random()*8;
+        return `left:${left}vw;background:${color};width:${size}px;height:${size}px;animation-delay:${delay}s;animation-duration:${2+Math.random()*2}s;border-radius:${Math.random()>0.5?'50%':'2px'}`;
+      });
+    },
+  }
+}
+</script>
+
+</body>
+</html>

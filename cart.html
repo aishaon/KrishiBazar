@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="cartApp()" @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>আমার কার্ট — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: { serif: ['Noto Serif Bengali','serif'] },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; }
+    .nav-glass{ backdrop-filter:blur(16px); }
+    .section-divider{ width:56px;height:4px;background:linear-gradient(90deg,#2e9c2e,#b8692a);border-radius:2px; }
+
+    .cart-item{
+      background:white; border-radius:20px;
+      border:1.5px solid #f0faf0;
+      transition:all .3s ease;
+    }
+    .cart-item:hover{ border-color:#a8e8a8; box-shadow:0 8px 24px rgba(0,0,0,.06); }
+    .cart-item.removing{ opacity:0; transform:translateX(30px); }
+
+    .qty-btn{
+      width:34px; height:34px; border-radius:10px;
+      background:#f0faf0; display:flex; align-items:center; justify-content:center;
+      font-size:18px; cursor:pointer; font-weight:700; color:#1e7e1e;
+      border:1.5px solid #d6f5d6; transition:all .2s ease;
+    }
+    .qty-btn:hover{ background:#1e7e1e; color:white; border-color:#1e7e1e; }
+
+    .coupon-input:focus{ outline:none; border-color:#1e7e1e; }
+
+    .order-summary{
+      background:white; border-radius:24px;
+      border:1.5px solid #f0faf0;
+      position:sticky; top:120px;
+    }
+
+    .progress-step{ position:relative; }
+    .progress-step::after{
+      content:''; position:absolute;
+      top:50%; left:100%;
+      width:100%; height:2px;
+      background:#d6f5d6;
+      transform:translateY(-50%);
+    }
+    .progress-step:last-child::after{ display:none; }
+    .progress-step.done::after{ background:#1e7e1e; }
+
+    .marquee-track{ display:flex; animation:marquee 28s linear infinite; white-space:nowrap; }
+    @keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes fadeUp{ from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up{ animation:fadeUp .4s ease forwards; }
+    @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .shake{ animation:shake .3s ease; }
+
+    .recommended-card{
+      background:white; border-radius:16px; overflow:hidden;
+      border:1.5px solid #f0faf0;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1);
+      cursor:pointer;
+    }
+    .recommended-card:hover{ transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.09); border-color:#a8e8a8; }
+
+    .savings-badge{ background:linear-gradient(135deg,#1e7e1e,#4ab94a); }
+    .checkout-btn{ background:linear-gradient(135deg,#9a501e,#b8692a); transition:all .3s ease; }
+    .checkout-btn:hover{ background:linear-gradient(135deg,#7d3c18,#9a501e); transform:translateY(-2px); box-shadow:0 8px 20px rgba(154,80,30,.4); }
+  </style>
+</head>
+
+<body class="overflow-x-hidden">
+
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div class="bg-leaf-800 text-white text-xs py-2 overflow-hidden">
+  <div class="marquee-track gap-12">
+    <span class="px-8">🎁 ৫০০ টাকার উপরে অর্ডারে ফ্রি ডেলিভারি</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">🔒 নিরাপদ পেমেন্ট গ্যারান্টি</span>
+    <span class="px-8">↩️ ৭ দিনের রিটার্ন পলিসি</span>
+    <span class="px-8">🎁 ৫০০ টাকার উপরে অর্ডারে ফ্রি ডেলিভারি</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">🔒 নিরাপদ পেমেন্ট গ্যারান্টি</span>
+    <span class="px-8">↩️ ৭ দিনের রিটার্ন পলিসি</span>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav :class="scrolled ? 'bg-white/95 shadow-md nav-glass':'bg-white'"
+     class="sticky top-0 z-50 border-b border-leaf-100 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 gap-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow">
+          <span class="text-xl">🌿</span>
+        </div>
+        <div class="hidden sm:block">
+          <div class="font-serif font-bold text-leaf-800 text-lg leading-none">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+
+      <div class="flex-1 max-w-md hidden md:block">
+        <div class="relative">
+          <input type="search" placeholder="পণ্য খুঁজুন..."
+                 class="w-full pl-4 pr-10 py-2.5 rounded-xl border-2 border-leaf-200 bg-leaf-50 focus:outline-none focus:border-leaf-500 text-sm"/>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="cart.html" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-100 text-leaf-700 transition-colors">
+          <span class="text-xl">🛒</span>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center" x-text="cartItems.length"></span>
+        </a>
+        <a href="#" class="hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl bg-leaf-600 text-white text-sm font-medium hover:bg-leaf-700 transition-colors">👤 লগইন</a>
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-1 pb-2 text-sm font-medium border-t border-leaf-50 pt-2">
+      <a href="index.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🏠 হোম</a>
+      <a href="about.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">আমাদের সম্পর্কে</a>
+      <a href="shop.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🛒 শপ</a>
+      <a href="blog.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📚 ব্লগ</a>
+      <a href="contact.html" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📞 যোগাযোগ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ BREADCRUMB ══ -->
+<div class="bg-white border-b border-leaf-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-xs text-gray-400">
+    <a href="index.html" class="hover:text-leaf-600">হোম</a>
+    <span>›</span>
+    <span class="text-leaf-700 font-medium">আমার কার্ট</span>
+  </div>
+</div>
+
+<!-- ══ CHECKOUT PROGRESS ══ -->
+<div class="bg-white border-b border-leaf-50 py-4">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between">
+      <div class="flex flex-col items-center gap-1 progress-step done flex-1">
+        <div class="w-9 h-9 rounded-full bg-leaf-600 text-white flex items-center justify-center font-bold text-sm shadow-md">✓</div>
+        <span class="text-xs font-semibold text-leaf-700">কার্ট</span>
+      </div>
+      <div class="flex-1 h-0.5 bg-leaf-200 -mt-4 mx-1"></div>
+      <div class="flex flex-col items-center gap-1 flex-1">
+        <div class="w-9 h-9 rounded-full bg-leaf-100 text-leaf-400 flex items-center justify-center font-bold text-sm border-2 border-leaf-200">২</div>
+        <span class="text-xs text-gray-400">চেকআউট</span>
+      </div>
+      <div class="flex-1 h-0.5 bg-gray-200 -mt-4 mx-1"></div>
+      <div class="flex flex-col items-center gap-1 flex-1">
+        <div class="w-9 h-9 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center font-bold text-sm border-2 border-gray-200">৩</div>
+        <span class="text-xs text-gray-300">নিশ্চিতকরণ</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-32 md:pb-8">
+
+  <!-- EMPTY CART -->
+  <div x-show="cartItems.length === 0" class="text-center py-24 fade-up">
+    <div class="text-8xl mb-6">🛒</div>
+    <h2 class="text-2xl font-black text-leaf-900 mb-2">আপনার কার্ট খালি!</h2>
+    <p class="text-gray-400 mb-8 text-sm">কোনো পণ্য কার্টে নেই। এখনই কেনাকাটা শুরু করুন।</p>
+    <a href="shop.html" class="inline-flex items-center gap-2 px-8 py-3.5 bg-leaf-600 text-white font-bold rounded-2xl hover:bg-leaf-700 transition-colors shadow-lg">
+      🌿 পণ্য দেখুন
+    </a>
+  </div>
+
+  <!-- CART WITH ITEMS -->
+  <div x-show="cartItems.length > 0" class="grid lg:grid-cols-3 gap-8">
+
+    <!-- LEFT: Cart Items -->
+    <div class="lg:col-span-2 space-y-4">
+
+      <!-- Header row -->
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <div class="section-divider mb-2"></div>
+          <h1 class="text-2xl font-black text-leaf-900">
+            আমার কার্ট
+            <span class="text-base font-normal text-gray-400 ml-2">(<span x-text="cartItems.length"></span> টি পণ্য)</span>
+          </h1>
+        </div>
+        <button @click="clearCart()"
+                class="text-xs text-red-400 hover:text-red-600 font-medium flex items-center gap-1 transition-colors border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg">
+          🗑 সব মুছুন
+        </button>
+      </div>
+
+      <!-- Free delivery progress -->
+      <div x-show="subtotal < 500" class="bg-gradient-to-r from-leaf-50 to-earth-50 rounded-2xl p-4 border border-leaf-100">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-leaf-800">🚚 ফ্রি ডেলিভারি পেতে আর মাত্র:</span>
+          <span class="font-black text-earth-700">৳<span x-text="(500 - subtotal).toFixed(0)"></span></span>
+        </div>
+        <div class="bg-white rounded-full h-2.5 overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-leaf-500 to-leaf-400 rounded-full transition-all duration-500"
+               :style="'width:'+Math.min(subtotal/500*100,100)+'%'"></div>
+        </div>
+        <p class="text-xs text-gray-400 mt-1.5">৫০০ টাকার উপরে অর্ডারে ফ্রি ডেলিভারি!</p>
+      </div>
+      <div x-show="subtotal >= 500" class="bg-leaf-600 text-white rounded-2xl p-4 flex items-center gap-3">
+        <span class="text-2xl">🎉</span>
+        <div>
+          <div class="font-bold text-sm">অভিনন্দন! আপনি ফ্রি ডেলিভারি পাচ্ছেন!</div>
+          <div class="text-white/70 text-xs mt-0.5">৫০০ টাকার বেশি অর্ডারে ডেলিভারি চার্জ নেই।</div>
+        </div>
+      </div>
+
+      <!-- Cart Items List -->
+      <template x-for="(item, idx) in cartItems" :key="item.id">
+        <div class="cart-item p-4" :class="removingId === item.id ? 'removing' : ''" :id="'item-'+item.id">
+          <div class="flex gap-4">
+
+            <!-- Image -->
+            <a href="single-product.html" class="shrink-0">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-leaf-50 to-leaf-200 rounded-xl flex items-center justify-center text-4xl hover:scale-105 transition-transform">
+                <span x-text="item.icon"></span>
+              </div>
+            </a>
+
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <span class="text-[10px] bg-leaf-50 text-leaf-600 font-semibold px-2 py-0.5 rounded-full" x-text="item.tag"></span>
+                  <a href="single-product.html">
+                    <h3 class="font-bold text-leaf-900 mt-1 text-sm sm:text-base leading-snug hover:text-leaf-600 transition-colors line-clamp-2" x-text="item.name"></h3>
+                  </a>
+                  <p class="text-xs text-gray-400 mt-0.5" x-text="item.variant"></p>
+                </div>
+                <!-- Remove -->
+                <button @click="removeItem(item.id)"
+                        class="shrink-0 w-8 h-8 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors text-sm font-bold">
+                  ✕
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between mt-3 flex-wrap gap-3">
+                <!-- Qty -->
+                <div class="flex items-center gap-2 bg-leaf-50 rounded-xl p-1">
+                  <button @click="updateQty(item.id, -1)" class="qty-btn">−</button>
+                  <span class="w-8 text-center font-bold text-leaf-900" x-text="item.qty"></span>
+                  <button @click="updateQty(item.id, 1)" class="qty-btn">+</button>
+                </div>
+
+                <!-- Price -->
+                <div class="text-right">
+                  <div class="font-black text-earth-700 text-lg" x-text="'৳'+(item.price * item.qty).toLocaleString()"></div>
+                  <div x-show="item.oldPrice" class="text-xs text-gray-400 line-through" x-text="'৳'+(item.oldPrice * item.qty).toLocaleString()"></div>
+                </div>
+              </div>
+
+              <!-- Save for later / Wishlist -->
+              <div class="flex items-center gap-4 mt-3 pt-3 border-t border-leaf-50">
+                <button @click="saveForLater(item.id)" class="text-xs text-leaf-600 hover:text-leaf-800 flex items-center gap-1 transition-colors">
+                  🔖 পরে কিনব
+                </button>
+                <button class="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+                  ♥ পছন্দের তালিকায় যোগ করুন
+                </button>
+                <span x-show="item.oldPrice" class="ml-auto text-xs bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded-md">
+                  <span x-text="Math.round((item.oldPrice-item.price)/item.oldPrice*100)"></span>% ছাড়
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Saved for later -->
+      <div x-show="savedItems.length > 0" class="mt-6">
+        <h3 class="font-bold text-leaf-900 mb-3 text-sm">🔖 পরে কেনার তালিকা (<span x-text="savedItems.length"></span>)</h3>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <template x-for="item in savedItems" :key="item.id">
+            <div class="bg-white border border-leaf-100 rounded-xl p-3 flex items-center gap-3">
+              <div class="w-12 h-12 bg-leaf-50 rounded-xl flex items-center justify-center text-2xl shrink-0" x-text="item.icon"></div>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-leaf-900 text-xs truncate" x-text="item.name"></div>
+                <div class="font-bold text-earth-700 text-sm" x-text="'৳'+item.price"></div>
+              </div>
+              <button @click="moveToCart(item.id)" class="text-xs bg-leaf-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-leaf-700 transition-colors font-medium whitespace-nowrap">
+                কার্টে যোগ
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Continue Shopping -->
+      <div class="pt-2">
+        <a href="shop.html" class="inline-flex items-center gap-2 text-leaf-600 hover:text-leaf-800 font-medium text-sm transition-colors">
+          ← কেনাকাটা চালিয়ে যান
+        </a>
+      </div>
+    </div>
+
+    <!-- RIGHT: Order Summary -->
+    <div class="lg:col-span-1">
+      <div class="order-summary p-6">
+        <h2 class="font-black text-leaf-900 text-lg mb-5 pb-4 border-b border-leaf-100">📋 অর্ডার সারসংক্ষেপ</h2>
+
+        <!-- Coupon -->
+        <div class="mb-5" x-data="{couponOpen: false, couponInput:'', couponMsg:'', couponApplied:false}">
+          <button @click="couponOpen=!couponOpen"
+                  class="w-full flex items-center justify-between text-sm font-semibold text-leaf-700 hover:text-leaf-900 transition-colors">
+            <span>🏷️ কুপন কোড আছে?</span>
+            <span :class="couponOpen?'rotate-180':''" class="transition-transform">▼</span>
+          </button>
+          <div x-show="couponOpen" x-transition class="mt-3">
+            <div class="flex gap-2">
+              <input x-model="couponInput" type="text" placeholder="কুপন কোড লিখুন"
+                     class="coupon-input flex-1 px-3 py-2.5 rounded-xl border-2 border-leaf-200 text-sm bg-leaf-50 transition-colors" />
+              <button @click="applyCoupon(couponInput); couponMsg = couponInput.toUpperCase()==='KRISHI20' ? '✅ ২০% ছাড় প্রযোজ্য!' : '❌ অবৈধ কুপন কোড'"
+                      class="px-4 py-2.5 bg-leaf-600 text-white rounded-xl text-sm font-semibold hover:bg-leaf-700 transition-colors whitespace-nowrap">
+                প্রয়োগ
+              </button>
+            </div>
+            <p x-show="couponMsg" class="text-xs mt-2 font-medium" :class="couponMsg.includes('✅') ? 'text-leaf-600':'text-red-500'" x-text="couponMsg"></p>
+            <p class="text-xs text-gray-400 mt-1">পরীক্ষা করুন: <strong class="text-leaf-600 cursor-pointer" @click="couponInput='KRISHI20'">KRISHI20</strong></p>
+          </div>
+        </div>
+
+        <!-- Price Breakdown -->
+        <div class="space-y-3 text-sm pb-4 border-b border-leaf-100">
+          <div class="flex justify-between text-gray-600">
+            <span>পণ্যের মূল্য (<span x-text="totalQty"></span> টি)</span>
+            <span class="font-medium">৳<span x-text="subtotal.toLocaleString()"></span></span>
+          </div>
+          <div x-show="totalDiscount > 0" class="flex justify-between text-green-600">
+            <span>মোট সাশ্রয়</span>
+            <span class="font-semibold">− ৳<span x-text="totalDiscount.toLocaleString()"></span></span>
+          </div>
+          <div x-show="couponDiscount > 0" class="flex justify-between text-green-600">
+            <span>কুপন ছাড় (KRISHI20)</span>
+            <span class="font-semibold">− ৳<span x-text="couponDiscount.toFixed(0)"></span></span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>ডেলিভারি চার্জ</span>
+            <span x-show="deliveryCharge > 0" class="font-medium">৳<span x-text="deliveryCharge"></span></span>
+            <span x-show="deliveryCharge === 0" class="font-semibold text-leaf-600">ফ্রি 🎉</span>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="flex justify-between items-center py-4">
+          <span class="font-black text-leaf-900 text-base">মোট পরিশোধযোগ্য</span>
+          <span class="font-black text-earth-700 text-2xl">৳<span x-text="grandTotal.toLocaleString()"></span></span>
+        </div>
+
+        <!-- Savings badge -->
+        <div x-show="totalDiscount > 0 || couponDiscount > 0" class="savings-badge text-white rounded-xl px-4 py-2.5 flex items-center gap-2 mb-4">
+          <span class="text-xl">💰</span>
+          <div>
+            <div class="font-bold text-sm">আপনি সাশ্রয় করছেন</div>
+            <div class="text-white/80 text-xs">৳<span x-text="(totalDiscount + couponDiscount).toFixed(0)"></span> টাকা এই অর্ডারে</div>
+          </div>
+        </div>
+
+        <!-- Checkout Button -->
+        <a href="checkout.html" class="checkout-btn w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-center gap-2 shadow-lg">
+          ⚡ চেকআউটে যান
+        </a>
+
+        <!-- Payment Methods -->
+        <div class="mt-4 text-center">
+          <p class="text-xs text-gray-400 mb-2">আমরা যেসব পেমেন্ট গ্রহণ করি:</p>
+          <div class="flex justify-center flex-wrap gap-2">
+            <span class="bg-pink-50 text-pink-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-pink-200">bKash</span>
+            <span class="bg-orange-50 text-orange-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-orange-200">Nagad</span>
+            <span class="bg-purple-50 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-purple-200">Rocket</span>
+            <span class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-blue-200">VISA</span>
+            <span class="bg-gray-50 text-gray-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-gray-200">ক্যাশ</span>
+          </div>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="grid grid-cols-3 gap-2 mt-4">
+          <div class="text-center bg-leaf-50 rounded-xl p-2">
+            <div class="text-lg mb-0.5">🔒</div>
+            <div class="text-[10px] text-gray-500">নিরাপদ</div>
+          </div>
+          <div class="text-center bg-leaf-50 rounded-xl p-2">
+            <div class="text-lg mb-0.5">🚚</div>
+            <div class="text-[10px] text-gray-500">দ্রুত</div>
+          </div>
+          <div class="text-center bg-leaf-50 rounded-xl p-2">
+            <div class="text-lg mb-0.5">↩️</div>
+            <div class="text-[10px] text-gray-500">রিটার্ন</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Need Help -->
+      <div class="bg-white rounded-2xl border border-leaf-100 p-4 mt-4 flex items-center gap-3">
+        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl shrink-0">💬</div>
+        <div>
+          <div class="font-semibold text-leaf-900 text-sm">সাহায্য দরকার?</div>
+          <a href="tel:01908597470" class="text-xs text-leaf-600 hover:text-leaf-800 transition-colors">📞 ০১৯০৮-৫৯৭৪৭০</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ YOU MAY ALSO LIKE ══ -->
+  <div x-show="cartItems.length > 0" class="mt-14">
+    <div class="mb-6">
+      <div class="section-divider mb-3"></div>
+      <h2 class="text-2xl font-black text-leaf-900">আপনার পছন্দ হতে পারে</h2>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <template x-for="p in recommended" :key="p.id">
+        <div class="recommended-card group">
+          <div class="h-28 bg-gradient-to-br from-leaf-50 to-leaf-200 flex items-center justify-center overflow-hidden">
+            <span class="text-5xl group-hover:scale-110 transition-transform duration-300" x-text="p.icon"></span>
+          </div>
+          <div class="p-3">
+            <span class="text-[10px] bg-leaf-50 text-leaf-700 font-semibold px-2 py-0.5 rounded-full" x-text="p.tag"></span>
+            <h3 class="font-semibold text-leaf-900 text-xs mt-1 leading-snug" x-text="p.name"></h3>
+            <div class="flex items-center justify-between mt-2">
+              <span class="font-bold text-earth-700 text-sm" x-text="'৳'+p.price"></span>
+              <div class="text-yellow-400 text-xs">★<span class="text-gray-400 ml-0.5" x-text="p.rating"></span></div>
+            </div>
+            <button @click="addRecommended(p)"
+                    :class="addedRec===p.id ? 'bg-leaf-500':'bg-gradient-to-r from-leaf-700 to-leaf-500 hover:opacity-90'"
+                    class="w-full mt-2 py-1.5 text-white text-xs font-semibold rounded-xl transition-all">
+              <span x-text="addedRec===p.id ? '✓ যোগ হয়েছে':'🛒 কার্টে যোগ করুন'"></span>
+            </button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+</main>
+
+<!-- ══ MOBILE STICKY BOTTOM BAR ══ -->
+<div x-show="cartItems.length > 0" class="fixed bottom-0 left-0 right-0 bg-white border-t border-leaf-100 px-4 py-3 z-40 md:hidden shadow-lg">
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <div class="text-xs text-gray-400">মোট (<span x-text="totalQty"></span> পণ্য)</div>
+      <div class="font-black text-earth-700 text-lg">৳<span x-text="grandTotal.toLocaleString()"></span></div>
+    </div>
+    <a href="checkout.html" class="flex-1 py-3 checkout-btn text-white font-black text-sm rounded-2xl flex items-center justify-center gap-1">
+      ⚡ চেকআউটে যান
+    </a>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer class="bg-leaf-900 text-white pt-10 pb-6 mt-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-xl">🌿</div>
+          <div class="font-serif font-bold">কৃষি বাজার</div>
+        </div>
+        <p class="text-white/40 text-xs leading-relaxed">২০১৭ সাল থেকে বাংলাদেশের কৃষকদের পাশে।</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">পেজসমূহ</h4>
+        <ul class="space-y-1.5">
+          <li><a href="index.html" class="text-white/45 text-xs hover:text-white transition-colors">হোম</a></li>
+          <li><a href="shop.html"  class="text-white/45 text-xs hover:text-white transition-colors">শপ</a></li>
+          <li><a href="blog.html"  class="text-white/45 text-xs hover:text-white transition-colors">ব্লগ</a></li>
+          <li><a href="about.html" class="text-white/45 text-xs hover:text-white transition-colors">আমাদের সম্পর্কে</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">সাপোর্ট</h4>
+        <ul class="space-y-1.5">
+          <li><a href="faq.html"           class="text-white/45 text-xs hover:text-white transition-colors">সাধারণ প্রশ্ন</a></li>
+          <li><a href="refund-policy.html" class="text-white/45 text-xs hover:text-white transition-colors">রিফান্ড নীতি</a></li>
+          <li><a href="terms.html"         class="text-white/45 text-xs hover:text-white transition-colors">শর্তাবলী</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">যোগাযোগ</h4>
+        <p class="text-white/45 text-xs">📞 ০১৯০৮-৫৯৭৪৭০</p>
+        <p class="text-white/45 text-xs mt-1">✉️ info@krishibazar.com.bd</p>
+      </div>
+    </div>
+    <div class="pt-5 text-center">
+      <p class="text-white/30 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/01908597470" target="_blank"
+   class="fixed bottom-20 md:bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-xl hover:bg-green-600 hover:scale-110 transition-all z-50">💬</a>
+
+<script>
+function cartApp() {
+  return {
+    scrolled: false,
+    removingId: null,
+    addedRec: null,
+    couponDiscount: 0,
+
+    cartItems: [
+      { id:1, name:'সুন্দরবনের খাঁটি মধু',    icon:'🍯', tag:'বেস্ট সেলার', variant:'৫০০ গ্রাম',  price:650,  oldPrice:750,  qty:1 },
+      { id:2, name:'জৈব সার (৫ কেজি)',          icon:'🌿', tag:'অর্গানিক',    variant:'৫ কেজি প্যাক', price:180, oldPrice:220,  qty:2 },
+      { id:3, name:'দেশি মুরগি (জীবন্ত)',       icon:'🐓', tag:'তাজা',        variant:'১টি (গড় ১.২ কেজি)', price:380, oldPrice:null, qty:1 },
+    ],
+
+    savedItems: [],
+
+    recommended: [
+      { id:10, name:'হাইব্রিড টমেটো বীজ',    icon:'🍅', tag:'উচ্চফলনশীল', price:95,  rating:4.6 },
+      { id:11, name:'মাশরুম স্পন প্যাকেজ',    icon:'🍄', tag:'জৈব',         price:350, rating:4.7 },
+      { id:12, name:'খাঁটি সরিষার তেল',        icon:'🫙', tag:'অর্গানিক',   price:280, rating:4.9 },
+      { id:13, name:'ছাদ বাগানের মাটি',        icon:'🪴', tag:'ছাদ বাগান',  price:320, rating:4.5 },
+    ],
+
+    get subtotal() {
+      return this.cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+    },
+    get totalQty() {
+      return this.cartItems.reduce((s, i) => s + i.qty, 0);
+    },
+    get totalDiscount() {
+      return this.cartItems.reduce((s, i) => s + (i.oldPrice ? (i.oldPrice - i.price) * i.qty : 0), 0);
+    },
+    get deliveryCharge() {
+      return this.subtotal >= 500 ? 0 : 70;
+    },
+    get grandTotal() {
+      return Math.max(0, this.subtotal + this.deliveryCharge - this.couponDiscount);
+    },
+
+    updateQty(id, delta) {
+      const item = this.cartItems.find(i => i.id === id);
+      if (!item) return;
+      const newQty = item.qty + delta;
+      if (newQty < 1) { this.removeItem(id); return; }
+      item.qty = newQty;
+    },
+
+    removeItem(id) {
+      this.removingId = id;
+      setTimeout(() => {
+        this.cartItems = this.cartItems.filter(i => i.id !== id);
+        this.removingId = null;
+      }, 300);
+    },
+
+    clearCart() {
+      if (confirm('সব পণ্য কার্ট থেকে মুছে ফেলবেন?')) {
+        this.cartItems = [];
+      }
+    },
+
+    saveForLater(id) {
+      const item = this.cartItems.find(i => i.id === id);
+      if (!item) return;
+      this.savedItems.push({ ...item });
+      this.removeItem(id);
+    },
+
+    moveToCart(id) {
+      const item = this.savedItems.find(i => i.id === id);
+      if (!item) return;
+      this.cartItems.push({ ...item, qty: 1 });
+      this.savedItems = this.savedItems.filter(i => i.id !== id);
+    },
+
+    applyCoupon(code) {
+      if (code.toUpperCase() === 'KRISHI20') {
+        this.couponDiscount = this.subtotal * 0.20;
+      } else {
+        this.couponDiscount = 0;
+      }
+    },
+
+    addRecommended(p) {
+      const exists = this.cartItems.find(i => i.id === p.id);
+      if (exists) { exists.qty++; }
+      else { this.cartItems.push({ ...p, variant: 'ডিফল্ট', oldPrice: null, qty: 1 }); }
+      this.addedRec = p.id;
+      setTimeout(() => this.addedRec = null, 1800);
+    },
+  }
+}
+</script>
+
+</body>
+</html>
