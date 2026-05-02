@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="contactApp()" @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>যোগাযোগ করুন — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: { serif: ['Noto Serif Bengali','serif'] },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3,h4{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; }
+    .nav-glass{ backdrop-filter:blur(16px); }
+    .section-divider{ width:56px;height:4px;background:linear-gradient(90deg,#2e9c2e,#b8692a);border-radius:2px; }
+
+    .contact-hero{
+      background:linear-gradient(135deg,#0a300a 0%,#1e7e1e 50%,#4ab94a 100%);
+      position:relative; overflow:hidden;
+    }
+    .contact-hero::before{
+      content:''; position:absolute; inset:0;
+      background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .form-label{ font-size:13px;font-weight:600;color:#104810;margin-bottom:6px;display:block; }
+    .form-input{
+      width:100%;padding:12px 16px;border-radius:14px;
+      border:2px solid #d6f5d6;background:#f9fffe;
+      font-size:14px;color:#1a1a1a;transition:all .2s ease;outline:none;
+    }
+    .form-input:focus{ border-color:#1e7e1e;background:white;box-shadow:0 0 0 4px rgba(30,126,30,.08); }
+    .form-input.error{ border-color:#ef4444;background:#fff5f5; }
+    .form-input::placeholder{ color:#9ca3af; }
+    .error-msg{ font-size:11px;color:#ef4444;margin-top:4px; }
+
+    .contact-card{
+      background:white;border-radius:20px;padding:24px;
+      border:1.5px solid #f0faf0;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .contact-card:hover{ transform:translateY(-5px);box-shadow:0 16px 36px rgba(0,0,0,.1);border-color:#a8e8a8; }
+
+    .map-placeholder{
+      background:linear-gradient(145deg,#f0faf0,#d6f5d6);
+      border-radius:20px; overflow:hidden;
+      position:relative;
+    }
+
+    .social-btn{
+      display:flex;align-items:center;gap:12px;
+      padding:14px 18px;border-radius:16px;
+      border:1.5px solid #f0faf0;background:white;
+      transition:all .25s ease;cursor:pointer;
+    }
+    .social-btn:hover{ transform:translateX(4px);box-shadow:0 8px 20px rgba(0,0,0,.08); }
+
+    .faq-item{ border-radius:16px;border:1.5px solid #f0faf0;background:white;overflow:hidden; }
+    .faq-item:hover{ border-color:#d6f5d6; }
+
+    .submit-btn{
+      background:linear-gradient(135deg,#1e7e1e,#2e9c2e);
+      transition:all .3s ease;
+    }
+    .submit-btn:hover{ background:linear-gradient(135deg,#166116,#1e7e1e);transform:translateY(-2px);box-shadow:0 10px 24px rgba(30,126,30,.4); }
+
+    .marquee-track{ display:flex;animation:marquee 28s linear infinite;white-space:nowrap; }
+    @keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes fadeUp{ from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up{ animation:fadeUp .5s ease forwards; }
+    @keyframes popIn{ 0%{transform:scale(.7);opacity:0} 80%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+    .pop-in{ animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+    .online-dot{ width:10px;height:10px;background:#22c55e;border-radius:50%;animation:pulse-dot 2s infinite; }
+    @keyframes pulse-dot{ 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
+
+    .char-count{ font-size:11px;color:#9ca3af;text-align:right;margin-top:4px; }
+    .char-count.near{ color:#f59e0b; }
+    .char-count.over{ color:#ef4444; }
+
+    .topic-chip{
+      padding:6px 14px;border-radius:99px;font-size:12px;font-weight:500;
+      border:1.5px solid #d6f5d6;color:#1e7e1e;background:white;
+      cursor:pointer;transition:all .2s;
+    }
+    .topic-chip.active{ background:#1e7e1e;color:white;border-color:#1e7e1e; }
+  </style>
+</head>
+
+<body class="overflow-x-hidden">
+
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div class="bg-leaf-800 text-white text-xs py-2 overflow-hidden">
+  <div class="marquee-track gap-12">
+    <span class="px-8">📞 সার্বক্ষণিক সাপোর্ট: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">💬 হোয়াটসঅ্যাপেও যোগাযোগ করুন</span>
+    <span class="px-8">✉️ info@krishibazar.com.bd</span>
+    <span class="px-8">📞 সার্বক্ষণিক সাপোর্ট: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">💬 হোয়াটসঅ্যাপেও যোগাযোগ করুন</span>
+    <span class="px-8">✉️ info@krishibazar.com.bd</span>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav :class="scrolled ? 'bg-white/95 shadow-md nav-glass':'bg-white'"
+     class="sticky top-0 z-50 border-b border-leaf-100 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 gap-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow">
+          <span class="text-xl">🌿</span>
+        </div>
+        <div class="hidden sm:block">
+          <div class="font-serif font-bold text-leaf-800 text-lg leading-none">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+
+      <div class="flex-1 max-w-lg hidden md:block">
+        <div class="relative">
+          <input type="search" placeholder="পণ্য খুঁজুন..."
+                 class="w-full pl-4 pr-10 py-2.5 rounded-xl border-2 border-leaf-200 bg-leaf-50 focus:outline-none focus:border-leaf-500 text-sm"/>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="cart.html" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+          <span class="text-xl">🛒</span>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">৩</span>
+        </a>
+        <a href="#" class="hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl bg-leaf-600 text-white text-sm font-medium hover:bg-leaf-700 transition-colors">👤 লগইন</a>
+        <button @click="mobileMenu=!mobileMenu" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-leaf-50">
+          <svg class="w-5 h-5 text-leaf-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-1 pb-2 text-sm font-medium border-t border-leaf-50 pt-2">
+      <a href="index.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🏠 হোম</a>
+      <a href="about.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">আমাদের সম্পর্কে</a>
+      <a href="shop.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🛒 শপ</a>
+      <a href="blog.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📚 ব্লগ</a>
+      <a href="contact.html" class="px-3 py-1 rounded-lg bg-leaf-600 text-white">📞 যোগাযোগ</a>
+    </div>
+
+    <div x-show="mobileMenu" x-transition class="md:hidden border-t border-leaf-100 py-3 grid grid-cols-2 gap-1">
+      <a href="index.html"   class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">🏠 হোম</a>
+      <a href="about.html"   class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">আমাদের সম্পর্কে</a>
+      <a href="shop.html"    class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">🛒 শপ</a>
+      <a href="blog.html"    class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">📚 ব্লগ</a>
+      <a href="contact.html" class="px-3 py-2 rounded-lg bg-leaf-50 text-leaf-700 text-sm font-semibold">📞 যোগাযোগ</a>
+      <a href="faq.html"     class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">❓ FAQ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ BREADCRUMB ══ -->
+<div class="bg-white border-b border-leaf-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-xs text-gray-400">
+    <a href="index.html" class="hover:text-leaf-600">হোম</a><span>›</span>
+    <span class="text-leaf-700 font-medium">যোগাযোগ</span>
+  </div>
+</div>
+
+<!-- ══ HERO ══ -->
+<section class="contact-hero py-16 md:py-22 relative">
+  <div class="absolute top-8 left-8 text-6xl opacity-10 animate-bounce" style="animation-duration:5s">📞</div>
+  <div class="absolute bottom-12 right-10 text-5xl opacity-10 animate-bounce" style="animation-duration:7s;animation-delay:1s">💬</div>
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
+    <div class="inline-flex items-center gap-2 bg-white/15 border border-white/25 text-white/90 text-xs px-4 py-1.5 rounded-full mb-5">
+      <span class="online-dot"></span>
+      এখন অনলাইনে আছি — সাথে সাথে সাহায্য পাবেন
+    </div>
+    <h1 class="text-4xl md:text-5xl font-black text-white leading-tight mb-4">
+      আমরা আছি<br/><span class="text-yellow-300">আপনার পাশে</span>
+    </h1>
+    <p class="text-white/75 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+      যেকোনো প্রশ্ন, অভিযোগ বা পরামর্শের জন্য আমাদের সাথে যোগাযোগ করুন। আমরা সবসময় সাহায্য করতে প্রস্তুত।
+    </p>
+
+    <!-- Quick contact pills -->
+    <div class="flex flex-wrap gap-3 justify-center mt-8">
+      <a href="tel:01908597470" class="flex items-center gap-2 bg-white/15 border border-white/25 text-white px-4 py-2.5 rounded-xl hover:bg-white/25 transition-all text-sm font-medium backdrop-blur-sm">
+        📞 ০১৯০৮-৫৯৭৪৭০
+      </a>
+      <a href="https://wa.me/01908597470" class="flex items-center gap-2 bg-green-500/80 border border-green-400/50 text-white px-4 py-2.5 rounded-xl hover:bg-green-500 transition-all text-sm font-medium backdrop-blur-sm">
+        💬 WhatsApp
+      </a>
+      <a href="mailto:info@krishibazar.com.bd" class="flex items-center gap-2 bg-white/15 border border-white/25 text-white px-4 py-2.5 rounded-xl hover:bg-white/25 transition-all text-sm font-medium backdrop-blur-sm">
+        ✉️ ইমেইল করুন
+      </a>
+    </div>
+  </div>
+
+  <svg class="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,40 C360,0 1080,70 1440,20 L1440,60 L0,60Z" fill="#fdf6e3"/>
+  </svg>
+</section>
+
+<!-- ══ CONTACT CARDS ══ -->
+<section class="py-12 bg-cream">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+      <div class="contact-card text-center fade-up">
+        <div class="w-14 h-14 bg-gradient-to-br from-leaf-100 to-leaf-300 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">📞</div>
+        <h3 class="font-bold text-leaf-900 mb-1">ফোনে কথা বলুন</h3>
+        <p class="text-gray-500 text-xs mb-3">সরাসরি কথা বলুন আমাদের টিমের সাথে</p>
+        <a href="tel:01908597470" class="font-bold text-leaf-700 hover:text-leaf-900 transition-colors block">০১৯০৮-৫৯৭৪৭০</a>
+        <a href="tel:01908597471" class="font-semibold text-leaf-600 hover:text-leaf-800 transition-colors block mt-0.5 text-sm">০১৯০৮-৫৯৭৪৭১</a>
+        <div class="mt-3 text-xs text-gray-400">📅 প্রতিদিন সকাল ৮টা – রাত ১০টা</div>
+      </div>
+
+      <div class="contact-card text-center fade-up" style="animation-delay:.1s">
+        <div class="w-14 h-14 bg-gradient-to-br from-green-100 to-green-300 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">💬</div>
+        <h3 class="font-bold text-leaf-900 mb-1">WhatsApp</h3>
+        <p class="text-gray-500 text-xs mb-3">মেসেজ করুন, ছবি পাঠান, দ্রুত উত্তর পান</p>
+        <a href="https://wa.me/01908597470" target="_blank"
+           class="inline-flex items-center gap-1.5 bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-600 transition-colors">
+          WhatsApp করুন →
+        </a>
+        <div class="mt-3 text-xs text-gray-400">⚡ সাধারণত ৫ মিনিটের মধ্যে রিপ্লাই</div>
+      </div>
+
+      <div class="contact-card text-center fade-up" style="animation-delay:.2s">
+        <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-300 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">✉️</div>
+        <h3 class="font-bold text-leaf-900 mb-1">ইমেইল করুন</h3>
+        <p class="text-gray-500 text-xs mb-3">বিস্তারিত প্রশ্নের জন্য ইমেইল পাঠান</p>
+        <a href="mailto:info@krishibazar.com.bd" class="font-bold text-blue-600 hover:text-blue-800 transition-colors text-sm block break-all">info@krishibazar.com.bd</a>
+        <div class="mt-3 text-xs text-gray-400">⏰ ২৪ ঘণ্টার মধ্যে রিপ্লাই</div>
+      </div>
+
+      <div class="contact-card text-center fade-up" style="animation-delay:.3s">
+        <div class="w-14 h-14 bg-gradient-to-br from-earth-100 to-earth-300 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">📍</div>
+        <h3 class="font-bold text-leaf-900 mb-1">অফিসে আসুন</h3>
+        <p class="text-gray-500 text-xs mb-3">সরাসরি আমাদের অফিসে দেখা করুন</p>
+        <p class="text-earth-700 font-semibold text-sm leading-snug">বাসা-৫১/১, সালেমা খাতুন রোড</p>
+        <p class="text-earth-600 text-xs mt-0.5">রংপুর, বাংলাদেশ</p>
+        <div class="mt-3 text-xs text-gray-400">📅 শনি–বৃহস্পতি, সকাল ৯টা – সন্ধ্যা ৬টা</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MAIN: Form + Info ══ -->
+<section class="py-12 bg-cream">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid lg:grid-cols-5 gap-10">
+
+      <!-- ── Contact Form ── -->
+      <div class="lg:col-span-3">
+        <div class="bg-white rounded-3xl shadow-sm border border-leaf-50 p-6 md:p-8">
+          <div class="section-divider mb-4"></div>
+          <h2 class="text-2xl font-black text-leaf-900 mb-1">বার্তা পাঠান</h2>
+          <p class="text-gray-400 text-sm mb-6">ফর্মটি পূরণ করুন, আমরা শীঘ্রই যোগাযোগ করব।</p>
+
+          <!-- Success Message -->
+          <div x-show="submitted" x-transition class="bg-leaf-50 border-2 border-leaf-200 rounded-2xl p-6 text-center pop-in">
+            <div class="text-5xl mb-3">✅</div>
+            <h3 class="font-black text-leaf-800 text-xl mb-2">বার্তা পাঠানো হয়েছে!</h3>
+            <p class="text-leaf-700 text-sm mb-4">ধন্যবাদ! আমরা আপনার বার্তা পেয়েছি। শীঘ্রই যোগাযোগ করব।</p>
+            <button @click="submitted=false;resetForm()" class="px-5 py-2 bg-leaf-600 text-white rounded-xl text-sm font-semibold hover:bg-leaf-700 transition-colors">
+              আরেকটি বার্তা পাঠান
+            </button>
+          </div>
+
+          <!-- Form -->
+          <form x-show="!submitted" @submit.prevent="submitForm()" class="space-y-5">
+
+            <!-- Topic chips -->
+            <div>
+              <label class="form-label">বিষয় বেছে নিন</label>
+              <div class="flex flex-wrap gap-2">
+                <template x-for="t in topics">
+                  <button type="button" @click="form.topic=t"
+                          :class="form.topic===t ? 'active':''"
+                          class="topic-chip" x-text="t"></button>
+                </template>
+              </div>
+              <p x-show="errors.topic" class="error-msg" x-text="errors.topic"></p>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-5">
+              <div>
+                <label class="form-label">আপনার নাম *</label>
+                <input x-model="form.name" type="text" placeholder="পূর্ণ নাম লিখুন"
+                       :class="errors.name ? 'error':''" class="form-input"/>
+                <p x-show="errors.name" class="error-msg" x-text="errors.name"></p>
+              </div>
+              <div>
+                <label class="form-label">মোবাইল নম্বর *</label>
+                <input x-model="form.phone" type="tel" placeholder="০১XXXXXXXXX"
+                       :class="errors.phone ? 'error':''" class="form-input"/>
+                <p x-show="errors.phone" class="error-msg" x-text="errors.phone"></p>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">ইমেইল ঠিকানা</label>
+              <input x-model="form.email" type="email" placeholder="example@email.com" class="form-input"/>
+            </div>
+
+            <div>
+              <label class="form-label">অর্ডার নম্বর (যদি থাকে)</label>
+              <input x-model="form.orderId" type="text" placeholder="#KB-XXXXXX" class="form-input"/>
+            </div>
+
+            <div>
+              <label class="form-label">আপনার বার্তা *</label>
+              <textarea x-model="form.message" rows="5"
+                        :maxlength="maxChars"
+                        placeholder="আপনার প্রশ্ন বা অভিযোগ বিস্তারিত লিখুন..."
+                        :class="errors.message ? 'error':''"
+                        class="form-input resize-none"></textarea>
+              <div class="flex justify-between items-center mt-1">
+                <p x-show="errors.message" class="error-msg" x-text="errors.message"></p>
+                <span class="char-count ml-auto"
+                      :class="form.message.length > maxChars*0.9 ? 'over':''"
+                      x-text="form.message.length+'/'+maxChars"></span>
+              </div>
+            </div>
+
+            <!-- File attachment -->
+            <div>
+              <label class="form-label">ছবি/ফাইল সংযুক্ত করুন (ঐচ্ছিক)</label>
+              <div class="border-2 border-dashed border-leaf-200 rounded-2xl p-5 text-center bg-leaf-50 hover:bg-leaf-100 transition-colors cursor-pointer"
+                   @click="$refs.fileInput.click()"
+                   @dragover.prevent @drop.prevent="handleDrop($event)">
+                <input type="file" x-ref="fileInput" @change="handleFile($event)" class="hidden" accept="image/*,.pdf" multiple/>
+                <div x-show="!attachedFiles.length">
+                  <div class="text-3xl mb-2">📎</div>
+                  <p class="text-sm text-leaf-700 font-medium">ক্লিক করুন বা ফাইল টেনে আনুন</p>
+                  <p class="text-xs text-gray-400 mt-1">JPG, PNG, PDF (সর্বোচ্চ ৫MB)</p>
+                </div>
+                <div x-show="attachedFiles.length" class="space-y-2">
+                  <template x-for="(f,i) in attachedFiles" :key="i">
+                    <div class="flex items-center justify-between bg-white rounded-xl px-3 py-2">
+                      <div class="flex items-center gap-2">
+                        <span class="text-lg">📄</span>
+                        <span class="text-sm text-leaf-800 font-medium" x-text="f.name"></span>
+                      </div>
+                      <button type="button" @click.stop="attachedFiles.splice(i,1)" class="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
+                    </div>
+                  </template>
+                  <button type="button" @click.stop="$refs.fileInput.click()" class="text-xs text-leaf-600 hover:text-leaf-800">+ আরও যোগ করুন</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rating (optional) -->
+            <div>
+              <label class="form-label">আমাদের সার্ভিস কতটা ভালো মনে হয়েছে? (ঐচ্ছিক)</label>
+              <div class="flex gap-2">
+                <template x-for="s in 5">
+                  <button type="button" @click="form.rating=s"
+                          :class="form.rating >= s ? 'text-yellow-400 scale-110':'text-gray-300'"
+                          class="text-3xl transition-all hover:scale-125">★</button>
+                </template>
+                <span x-show="form.rating" class="ml-2 text-sm text-gray-500 self-center"
+                      x-text="['','খুব খারাপ','খারাপ','মোটামুটি','ভালো','অসাধারণ!'][form.rating]"></span>
+              </div>
+            </div>
+
+            <button type="submit" :disabled="sending"
+                    class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-center gap-2 shadow-lg">
+              <span x-show="!sending">📨 বার্তা পাঠান</span>
+              <span x-show="sending" class="flex items-center gap-2">
+                <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                পাঠানো হচ্ছে...
+              </span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ── Right Info Panel ── -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Office Hours -->
+        <div class="bg-white rounded-2xl border border-leaf-50 p-5">
+          <h3 class="font-bold text-leaf-900 mb-4 flex items-center gap-2"><span>🕐</span> অফিস সময়</h3>
+          <div class="space-y-2.5">
+            <div class="flex justify-between items-center py-2 border-b border-leaf-50">
+              <span class="text-sm text-gray-600">শনি – বৃহস্পতি</span>
+              <span class="font-semibold text-leaf-800 text-sm">সকাল ৯টা – সন্ধ্যা ৬টা</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-leaf-50">
+              <span class="text-sm text-gray-600">শুক্রবার</span>
+              <span class="font-semibold text-earth-600 text-sm">বিকেল ৩টা – রাত ৮টা</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-sm text-gray-600">ফোন সাপোর্ট</span>
+              <span class="font-semibold text-leaf-800 text-sm">সকাল ৮টা – রাত ১০টা</span>
+            </div>
+          </div>
+          <div class="mt-4 bg-leaf-50 rounded-xl p-3 flex items-center gap-2">
+            <span class="online-dot shrink-0"></span>
+            <span class="text-xs text-leaf-700 font-medium">এখন অনলাইনে আছি</span>
+          </div>
+        </div>
+
+        <!-- Social Media -->
+        <div class="bg-white rounded-2xl border border-leaf-50 p-5">
+          <h3 class="font-bold text-leaf-900 mb-4 flex items-center gap-2"><span>🌐</span> সোশ্যাল মিডিয়া</h3>
+          <div class="space-y-2.5">
+            <a href="#" class="social-btn">
+              <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shrink-0">f</div>
+              <div>
+                <div class="font-semibold text-leaf-900 text-sm">Facebook</div>
+                <div class="text-xs text-gray-400">@krishibazar.bd • ১ লক্ষ+ ফলোয়ার</div>
+              </div>
+              <span class="ml-auto text-gray-300">›</span>
+            </a>
+            <a href="#" class="social-btn">
+              <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white font-bold shrink-0">▶</div>
+              <div>
+                <div class="font-semibold text-leaf-900 text-sm">YouTube</div>
+                <div class="text-xs text-gray-400">কৃষি বাজার • ভিডিও টিউটোরিয়াল</div>
+              </div>
+              <span class="ml-auto text-gray-300">›</span>
+            </a>
+            <a href="https://wa.me/01908597470" class="social-btn">
+              <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center text-white text-xl shrink-0">💬</div>
+              <div>
+                <div class="font-semibold text-leaf-900 text-sm">WhatsApp</div>
+                <div class="text-xs text-gray-400">সরাসরি মেসেজ করুন</div>
+              </div>
+              <span class="ml-auto text-gray-300">›</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="bg-white rounded-2xl border border-leaf-50 p-5">
+          <h3 class="font-bold text-leaf-900 mb-4 flex items-center gap-2"><span>📍</span> আমাদের অবস্থান</h3>
+          <div class="map-placeholder h-48 flex items-center justify-center relative">
+            <!-- Fake map visual -->
+            <div class="absolute inset-0 opacity-30"
+                 style="background: repeating-linear-gradient(0deg,#a8e8a8 0,#a8e8a8 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#a8e8a8 0,#a8e8a8 1px,transparent 1px,transparent 40px)">
+            </div>
+            <!-- Roads -->
+            <div class="absolute top-1/2 left-0 right-0 h-3 bg-white/70 -translate-y-1/2"></div>
+            <div class="absolute left-1/2 top-0 bottom-0 w-3 bg-white/70 -translate-x-1/2"></div>
+            <!-- Pin -->
+            <div class="relative z-10 text-center">
+              <div class="text-5xl animate-bounce" style="animation-duration:2s">📍</div>
+              <div class="bg-leaf-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl mt-2 shadow-lg">
+                কৃষি বাজার অফিস
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 text-sm text-gray-600 flex items-start gap-2">
+            <span class="text-leaf-600 shrink-0">📍</span>
+            <span>বাসা-৫১/১, সালেমা খাতুন রোড, রংপুর সদর, রংপুর - ৫৪০০</span>
+          </div>
+          <a href="https://maps.google.com" target="_blank"
+             class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 border-2 border-leaf-200 text-leaf-700 rounded-xl text-sm font-semibold hover:bg-leaf-50 transition-colors">
+            🗺️ Google Maps-এ দেখুন
+          </a>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="bg-gradient-to-br from-earth-600 to-earth-800 rounded-2xl p-5 text-white">
+          <h3 class="font-bold mb-3 flex items-center gap-2"><span>🆘</span> জরুরি সাহায্য</h3>
+          <p class="text-white/70 text-xs mb-4 leading-relaxed">ডেলিভারি সমস্যা, ভুল পণ্য বা অন্য কোনো জরুরি বিষয়ে সরাসরি ফোন করুন।</p>
+          <a href="tel:01908597470" class="flex items-center gap-3 bg-white/15 rounded-xl px-4 py-3 hover:bg-white/25 transition-colors">
+            <span class="text-2xl">📞</span>
+            <div>
+              <div class="font-black">০১৯০৮-৫৯৭৪৭০</div>
+              <div class="text-white/60 text-xs">সকাল ৮টা – রাত ১০টা</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ QUICK FAQ ══ -->
+<section class="py-12 bg-leaf-50">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-8">
+      <div class="section-divider mx-auto mb-4"></div>
+      <h2 class="text-2xl font-black text-leaf-900">প্রায়ই জিজ্ঞাসিত প্রশ্ন</h2>
+      <p class="text-gray-400 text-sm mt-2">এখানে উত্তর না পেলে আমাদের <a href="faq.html" class="text-leaf-600 hover:underline">বিস্তারিত FAQ</a> দেখুন</p>
+    </div>
+
+    <div class="space-y-3" x-data="{open: null}">
+      <template x-for="(faq, idx) in faqs" :key="idx">
+        <div class="faq-item">
+          <button @click="open = open===idx ? null:idx"
+                  class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-leaf-50 transition-colors">
+            <span class="font-semibold text-leaf-900 text-sm" x-text="faq.q"></span>
+            <span :class="open===idx ? 'rotate-180':''" class="transition-transform text-leaf-500 shrink-0 ml-2 text-sm">▼</span>
+          </button>
+          <div :class="open===idx ? 'max-h-40':'max-h-0'" class="overflow-hidden transition-all duration-300">
+            <p class="px-5 pb-4 text-sm text-gray-600 leading-relaxed" x-text="faq.a"></p>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div class="text-center mt-8">
+      <a href="faq.html" class="inline-flex items-center gap-2 px-6 py-3 border-2 border-leaf-300 text-leaf-700 font-semibold rounded-xl hover:bg-leaf-600 hover:text-white hover:border-leaf-600 transition-all text-sm">
+        সব প্রশ্ন দেখুন →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer class="bg-leaf-900 text-white pt-10 pb-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-xl">🌿</div>
+          <div class="font-serif font-bold">কৃষি বাজার</div>
+        </div>
+        <p class="text-white/40 text-xs leading-relaxed">২০১৭ সাল থেকে বাংলাদেশের কৃষকদের পাশে।</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">পেজসমূহ</h4>
+        <ul class="space-y-1.5">
+          <li><a href="index.html" class="text-white/45 text-xs hover:text-white transition-colors">হোম</a></li>
+          <li><a href="about.html" class="text-white/45 text-xs hover:text-white transition-colors">আমাদের সম্পর্কে</a></li>
+          <li><a href="shop.html"  class="text-white/45 text-xs hover:text-white transition-colors">শপ</a></li>
+          <li><a href="blog.html"  class="text-white/45 text-xs hover:text-white transition-colors">ব্লগ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">সাপোর্ট</h4>
+        <ul class="space-y-1.5">
+          <li><a href="faq.html"           class="text-white/45 text-xs hover:text-white transition-colors">সাধারণ প্রশ্ন</a></li>
+          <li><a href="refund-policy.html" class="text-white/45 text-xs hover:text-white transition-colors">রিফান্ড নীতি</a></li>
+          <li><a href="terms.html"         class="text-white/45 text-xs hover:text-white transition-colors">শর্তাবলী</a></li>
+          <li><a href="contact.html"       class="text-white/45 text-xs hover:text-white transition-colors">যোগাযোগ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">যোগাযোগ</h4>
+        <p class="text-white/45 text-xs">📞 ০১৯০৮-৫৯৭৪৭০</p>
+        <p class="text-white/45 text-xs mt-1">✉️ info@krishibazar.com.bd</p>
+        <p class="text-white/45 text-xs mt-1">📍 রংপুর, বাংলাদেশ</p>
+      </div>
+    </div>
+    <div class="pt-5 text-center">
+      <p class="text-white/30 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/01908597470" target="_blank"
+   class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-xl hover:bg-green-600 hover:scale-110 transition-all z-50">💬</a>
+
+<script>
+function contactApp() {
+  return {
+    scrolled: false,
+    mobileMenu: false,
+    submitted: false,
+    sending: false,
+    maxChars: 500,
+    attachedFiles: [],
+
+    form: {
+      name:'', phone:'', email:'',
+      orderId:'', topic:'', message:'',
+      rating: 0,
+    },
+    errors: {},
+
+    topics: ['পণ্যের অর্ডার','ডেলিভারি সমস্যা','রিফান্ড / রিটার্ন','পণ্যের মান','পেমেন্ট','কৃষি পরামর্শ','পার্টনারশিপ','অন্যান্য'],
+
+    faqs: [
+      { q:'অর্ডার করার পর কত দিনে ডেলিভারি পাবো?', a:'ঢাকা ও চট্টগ্রামে ১-২ কার্যদিবস এবং অন্যান্য জেলায় ৩-৫ কার্যদিবসের মধ্যে ডেলিভারি দেওয়া হয়।' },
+      { q:'পণ্য পছন্দ না হলে কি ফেরত দিতে পারবো?', a:'হ্যাঁ, ডেলিভারির ৭ দিনের মধ্যে পণ্য অক্ষত থাকলে ফেরত দিতে পারবেন। সম্পূর্ণ অর্থ ফেরত দেওয়া হবে।' },
+      { q:'bKash বা Nagad-এ পেমেন্ট করা যাবে?', a:'অবশ্যই। bKash, Nagad, Rocket, ক্যাশ অন ডেলিভারি সহ সব ধরনের পেমেন্ট গ্রহণ করা হয়।' },
+      { q:'কৃষক হিসেবে পণ্য বিক্রি করতে চাই, কীভাবে যোগ দেবো?', a:'আমাদের সাথে যোগাযোগ করুন অথবা এই ফর্মে "পার্টনারশিপ" বেছে বার্তা পাঠান। আমরা বিস্তারিত জানাবো।' },
+      { q:'ন্যূনতম অর্ডার পরিমাণ কত?', a:'কোনো ন্যূনতম অর্ডার নেই। তবে ৫০০ টাকার উপরে অর্ডারে ডেলিভারি চার্জ ফ্রি।' },
+    ],
+
+    validateForm() {
+      this.errors = {};
+      if (!this.form.topic)          this.errors.topic   = 'বিষয় বেছে নিন';
+      if (!this.form.name.trim())    this.errors.name    = 'নাম আবশ্যক';
+      if (!this.form.phone.match(/^01[3-9]\d{8}$/)) this.errors.phone = 'সঠিক মোবাইল নম্বর দিন';
+      if (!this.form.message.trim()) this.errors.message = 'বার্তা লিখুন';
+      if (this.form.message.length > this.maxChars) this.errors.message = 'বার্তা অনেক বড়';
+      return Object.keys(this.errors).length === 0;
+    },
+
+    submitForm() {
+      if (!this.validateForm()) return;
+      this.sending = true;
+      setTimeout(() => { this.sending = false; this.submitted = true; }, 1600);
+    },
+
+    resetForm() {
+      this.form = { name:'', phone:'', email:'', orderId:'', topic:'', message:'', rating:0 };
+      this.errors = {};
+      this.attachedFiles = [];
+    },
+
+    handleFile(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(f => { if(f.size <= 5*1024*1024) this.attachedFiles.push(f); });
+    },
+
+    handleDrop(e) {
+      const files = Array.from(e.dataTransfer.files);
+      files.forEach(f => { if(f.size <= 5*1024*1024) this.attachedFiles.push(f); });
+    },
+  }
+}
+</script>
+
+</body>
+</html>

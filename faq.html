@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="faqApp()" @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>সাধারণ প্রশ্নোত্তর — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: { serif: ['Noto Serif Bengali','serif'] },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; }
+    .nav-glass{ backdrop-filter:blur(16px); }
+    .section-divider{ width:56px;height:4px;background:linear-gradient(90deg,#2e9c2e,#b8692a);border-radius:2px; }
+
+    .faq-hero{
+      background:linear-gradient(135deg,#0a300a 0%,#1e7e1e 55%,#4ab94a 100%);
+      position:relative; overflow:hidden;
+    }
+    .faq-hero::before{
+      content:''; position:absolute; inset:0;
+      background:url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h26v26H0zm26 26h26v26H26z' fill='%23fff' fill-opacity='.02'/%3E%3C/svg%3E");
+    }
+
+    /* Search */
+    .search-bar{ border:2px solid #d6f5d6; background:#f9fffe; border-radius:16px; transition:all .2s ease; }
+    .search-bar:focus-within{ border-color:#1e7e1e; box-shadow:0 0 0 4px rgba(30,126,30,.1); background:white; }
+
+    /* Category tabs */
+    .cat-tab{
+      padding:10px 18px; border-radius:14px; font-size:13px; font-weight:600;
+      color:#1e7e1e; background:white; border:1.5px solid #d6f5d6;
+      cursor:pointer; transition:all .2s ease; white-space:nowrap;
+      display:flex; align-items:center; gap:6px;
+    }
+    .cat-tab:hover{ border-color:#74d474; background:#f0faf0; }
+    .cat-tab.active{ background:#1e7e1e; color:white; border-color:#1e7e1e; box-shadow:0 4px 12px rgba(30,126,30,.3); }
+
+    /* FAQ accordion */
+    .faq-card{
+      background:white; border-radius:18px;
+      border:1.5px solid #f0faf0;
+      overflow:hidden; transition:all .3s ease;
+    }
+    .faq-card:hover{ border-color:#d6f5d6; box-shadow:0 6px 20px rgba(0,0,0,.06); }
+    .faq-card.open{ border-color:#a8e8a8; box-shadow:0 8px 24px rgba(30,126,30,.1); }
+
+    .faq-btn{ width:100%; display:flex; align-items:flex-start; gap:14px; padding:18px 20px; text-align:left; cursor:pointer; background:none; border:none; transition:background .2s; }
+    .faq-btn:hover{ background:#fafffe; }
+
+    .faq-num{
+      width:28px; height:28px; border-radius:8px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:11px; font-weight:800; margin-top:1px;
+      background:#f0faf0; color:#1e7e1e; border:1.5px solid #d6f5d6;
+      transition:all .2s ease;
+    }
+    .faq-card.open .faq-num{ background:#1e7e1e; color:white; border-color:#1e7e1e; }
+
+    .faq-chevron{ flex-shrink:0; color:#9ca3af; font-size:14px; margin-top:3px; transition:transform .3s ease; }
+    .faq-card.open .faq-chevron{ transform:rotate(180deg); color:#1e7e1e; }
+
+    .faq-body{ max-height:0; overflow:hidden; transition:max-height .4s cubic-bezier(.4,0,.2,1); }
+    .faq-body.open{ max-height:600px; }
+
+    /* Helpful voting */
+    .vote-btn{
+      display:inline-flex; align-items:center; gap:5px;
+      padding:5px 12px; border-radius:99px; font-size:12px; font-weight:600;
+      border:1.5px solid #e5e7eb; color:#6b7280;
+      cursor:pointer; transition:all .2s ease;
+    }
+    .vote-btn:hover{ border-color:#1e7e1e; color:#1e7e1e; background:#f0faf0; }
+    .vote-btn.voted{ background:#1e7e1e; color:white; border-color:#1e7e1e; }
+
+    /* Highlight search match */
+    .highlight{ background:#fef9c3; border-radius:3px; padding:0 2px; }
+
+    /* Sidebar sticky nav */
+    .sidebar-nav{ position:sticky; top:130px; }
+    .sidebar-link{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:10px;
+      font-size:13px; font-weight:500; color:#6b7280;
+      cursor:pointer; transition:all .2s ease;
+    }
+    .sidebar-link:hover{ background:#f0faf0; color:#1e7e1e; }
+    .sidebar-link.active{ background:#f0faf0; color:#1e7e1e; font-weight:700; border-left:3px solid #1e7e1e; }
+
+    .marquee-track{ display:flex; animation:marquee 28s linear infinite; white-space:nowrap; }
+    @keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes fadeUp{ from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up{ animation:fadeUp .45s ease forwards; }
+
+    /* No results */
+    @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+    .shake{ animation:shake .3s ease; }
+
+    /* Count badge */
+    .count-badge{ font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;background:#f0faf0;color:#1e7e1e; }
+    .cat-tab.active .count-badge{ background:rgba(255,255,255,.25);color:white; }
+  </style>
+</head>
+<body class="overflow-x-hidden">
+
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div class="bg-leaf-800 text-white text-xs py-2 overflow-hidden">
+  <div class="marquee-track gap-12">
+    <span class="px-8">❓ সাধারণ প্রশ্নোত্তর পেজে স্বাগতম</span>
+    <span class="px-8">📞 সাহায্য: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">💬 WhatsApp: wa.me/01908597470</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+    <span class="px-8">❓ সাধারণ প্রশ্নোত্তর পেজে স্বাগতম</span>
+    <span class="px-8">📞 সাহায্য: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">💬 WhatsApp: wa.me/01908597470</span>
+    <span class="px-8">🌾 সারা বাংলাদেশে হোম ডেলিভারি</span>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav :class="scrolled ? 'bg-white/95 shadow-md nav-glass':'bg-white'"
+     class="sticky top-0 z-50 border-b border-leaf-100 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 gap-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow">
+          <span class="text-xl">🌿</span>
+        </div>
+        <div class="hidden sm:block">
+          <div class="font-serif font-bold text-leaf-800 text-lg leading-none">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+
+      <div class="flex-1 max-w-lg hidden md:block">
+        <div class="relative">
+          <input type="search" placeholder="পণ্য খুঁজুন..."
+                 class="w-full pl-4 pr-10 py-2.5 rounded-xl border-2 border-leaf-200 bg-leaf-50 focus:outline-none focus:border-leaf-500 text-sm"/>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="cart.html" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+          <span class="text-xl">🛒</span>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">৩</span>
+        </a>
+        <a href="#" class="hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl bg-leaf-600 text-white text-sm font-medium hover:bg-leaf-700 transition-colors">👤 লগইন</a>
+        <button @click="mobileMenu=!mobileMenu" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-leaf-50">
+          <svg class="w-5 h-5 text-leaf-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center gap-1 pb-2 text-sm font-medium border-t border-leaf-50 pt-2">
+      <a href="index.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🏠 হোম</a>
+      <a href="about.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">আমাদের সম্পর্কে</a>
+      <a href="shop.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🛒 শপ</a>
+      <a href="blog.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📚 ব্লগ</a>
+      <a href="contact.html" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📞 যোগাযোগ</a>
+      <a href="faq.html"     class="px-3 py-1 rounded-lg bg-leaf-600 text-white">❓ FAQ</a>
+    </div>
+    <div x-show="mobileMenu" x-transition class="md:hidden border-t border-leaf-100 py-3 grid grid-cols-2 gap-1">
+      <a href="index.html"   class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">🏠 হোম</a>
+      <a href="shop.html"    class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">🛒 শপ</a>
+      <a href="blog.html"    class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">📚 ব্লগ</a>
+      <a href="contact.html" class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">📞 যোগাযোগ</a>
+      <a href="faq.html"     class="px-3 py-2 rounded-lg bg-leaf-50 text-leaf-700 text-sm font-semibold">❓ FAQ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ BREADCRUMB ══ -->
+<div class="bg-white border-b border-leaf-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-xs text-gray-400">
+    <a href="index.html" class="hover:text-leaf-600">হোম</a><span>›</span>
+    <span class="text-leaf-700 font-medium">সাধারণ প্রশ্নোত্তর</span>
+  </div>
+</div>
+
+<!-- ══ HERO ══ -->
+<section class="faq-hero py-16 relative">
+  <div class="absolute top-8 left-8 text-6xl opacity-10 animate-bounce" style="animation-duration:4s">❓</div>
+  <div class="absolute bottom-10 right-10 text-5xl opacity-10 animate-bounce" style="animation-duration:6s;animation-delay:.5s">💡</div>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center relative z-10">
+    <div class="inline-flex items-center gap-2 bg-white/15 border border-white/25 text-white/90 text-xs px-4 py-1.5 rounded-full mb-5">
+      <span class="text-yellow-300">💡</span>
+      <span x-text="allFaqs.length + ' টি প্রশ্নের উত্তর এখানে আছে'"></span>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-black text-white leading-tight mb-4">
+      আপনার <span class="text-yellow-300">প্রশ্নের</span><br/>উত্তর খুঁজুন
+    </h1>
+    <p class="text-white/70 text-sm md:text-base mb-8 max-w-xl mx-auto">
+      অর্ডার, ডেলিভারি, পেমেন্ট থেকে শুরু করে কৃষি পরামর্শ — সব প্রশ্নের উত্তর এখানেই পাবেন।
+    </p>
+
+    <!-- Search Box -->
+    <div class="search-bar flex items-center gap-3 px-5 py-3 max-w-xl mx-auto">
+      <span class="text-leaf-500 text-xl shrink-0">🔍</span>
+      <input x-model="searchQ" @input="filterFaqs()" type="search"
+             placeholder="প্রশ্ন লিখে খুঁজুন... যেমন: ডেলিভারি কত দিনে?"
+             class="flex-1 bg-transparent outline-none text-sm text-leaf-900 placeholder-gray-400"/>
+      <button x-show="searchQ" @click="searchQ='';filterFaqs()"
+              class="text-gray-400 hover:text-red-400 transition-colors font-bold shrink-0">✕</button>
+    </div>
+
+    <!-- Stats row -->
+    <div class="flex items-center justify-center gap-6 mt-8 pt-8 border-t border-white/15">
+      <div class="text-center">
+        <div class="text-2xl font-black text-yellow-300" x-text="allFaqs.length + '+'"></div>
+        <div class="text-white/60 text-xs">প্রশ্নোত্তর</div>
+      </div>
+      <div class="w-px h-8 bg-white/20"></div>
+      <div class="text-center">
+        <div class="text-2xl font-black text-yellow-300" x-text="categories.length"></div>
+        <div class="text-white/60 text-xs">বিভাগ</div>
+      </div>
+      <div class="w-px h-8 bg-white/20"></div>
+      <div class="text-center">
+        <div class="text-2xl font-black text-yellow-300">৯৮%</div>
+        <div class="text-white/60 text-xs">সমাধানের হার</div>
+      </div>
+    </div>
+  </div>
+
+  <svg class="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,40 C360,0 1080,70 1440,20 L1440,60 L0,60Z" fill="#fdf6e3"/>
+  </svg>
+</section>
+
+<!-- ══ CATEGORY TABS (sticky) ══ -->
+<div class="bg-cream border-b border-leaf-100 py-4 sticky top-[104px] z-40 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex gap-2 overflow-x-auto pb-1">
+      <button @click="setCategory('সব')" :class="activeCategory==='সব'?'active':''" class="cat-tab shrink-0">
+        🌿 সব
+        <span class="count-badge" x-text="allFaqs.length"></span>
+      </button>
+      <template x-for="cat in categories" :key="cat.id">
+        <button @click="setCategory(cat.id)" :class="activeCategory===cat.id?'active':''" class="cat-tab shrink-0">
+          <span x-text="cat.icon + ' ' + cat.name"></span>
+          <span class="count-badge" x-text="allFaqs.filter(f=>f.cat===cat.id).length"></span>
+        </button>
+      </template>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ══ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+  <div class="flex gap-10">
+
+    <!-- ── Sidebar (desktop) ── -->
+    <aside class="hidden lg:block w-56 shrink-0">
+      <div class="sidebar-nav">
+        <h3 class="font-bold text-leaf-900 text-sm mb-3 px-2">বিভাগসমূহ</h3>
+        <div class="space-y-1">
+          <div @click="setCategory('সব')"
+               :class="activeCategory==='সব'?'active':''"
+               class="sidebar-link">
+            <span>🌿</span> সব প্রশ্ন
+            <span class="ml-auto text-xs text-gray-400" x-text="allFaqs.length"></span>
+          </div>
+          <template x-for="cat in categories" :key="cat.id">
+            <div @click="setCategory(cat.id)"
+                 :class="activeCategory===cat.id?'active':''"
+                 class="sidebar-link">
+              <span x-text="cat.icon"></span>
+              <span x-text="cat.name"></span>
+              <span class="ml-auto text-xs text-gray-400" x-text="allFaqs.filter(f=>f.cat===cat.id).length"></span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Popular tags -->
+        <div class="mt-6 px-2">
+          <h3 class="font-bold text-leaf-900 text-sm mb-3">জনপ্রিয় প্রশ্ন</h3>
+          <div class="space-y-2">
+            <template x-for="tag in popularTags">
+              <button @click="searchQ=tag;filterFaqs()"
+                      class="text-xs text-leaf-600 hover:text-leaf-800 flex items-center gap-1.5 transition-colors w-full text-left">
+                <span class="text-leaf-300">›</span>
+                <span x-text="tag"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- Contact CTA -->
+        <div class="mt-6 bg-gradient-to-br from-leaf-700 to-leaf-900 rounded-2xl p-4 text-white">
+          <div class="text-2xl mb-2">🤔</div>
+          <p class="font-bold text-sm mb-1">উত্তর পাননি?</p>
+          <p class="text-white/60 text-xs mb-3">আমাদের সাথে সরাসরি কথা বলুন</p>
+          <a href="contact.html" class="block text-center bg-white text-leaf-700 text-xs font-bold py-2 rounded-xl hover:bg-leaf-50 transition-colors">
+            যোগাযোগ করুন →
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── FAQ List ── -->
+    <div class="flex-1 min-w-0">
+
+      <!-- Result info -->
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+        <div>
+          <span class="text-sm text-gray-500">
+            <span x-show="!searchQ">
+              <strong class="text-leaf-800" x-text="filteredFaqs.length"></strong> টি প্রশ্ন পাওয়া গেছে
+            </span>
+            <span x-show="searchQ">
+              "<strong class="text-leaf-700" x-text="searchQ"></strong>" — <strong x-text="filteredFaqs.length"></strong> টি ফলাফল
+            </span>
+          </span>
+        </div>
+        <button x-show="openAll !== null" @click="openAll=null;openItem=null"
+                class="text-xs text-leaf-600 hover:text-leaf-800 font-medium border border-leaf-200 px-3 py-1.5 rounded-lg hover:bg-leaf-50 transition-colors">
+          সব বন্ধ করুন
+        </button>
+      </div>
+
+      <!-- No results -->
+      <div x-show="filteredFaqs.length === 0" class="text-center py-20 fade-up">
+        <div class="text-7xl mb-4">🔍</div>
+        <h3 class="font-black text-leaf-900 text-xl mb-2">কোনো ফলাফল পাওয়া যায়নি</h3>
+        <p class="text-gray-400 text-sm mb-5">"<span x-text="searchQ"></span>" — এই প্রশ্নটি আমাদের তালিকায় নেই।</p>
+        <div class="flex flex-wrap gap-3 justify-center">
+          <button @click="searchQ='';filterFaqs()" class="px-4 py-2 bg-leaf-600 text-white rounded-xl text-sm font-semibold hover:bg-leaf-700 transition-colors">
+            সব প্রশ্ন দেখুন
+          </button>
+          <a href="contact.html" class="px-4 py-2 border-2 border-leaf-300 text-leaf-700 rounded-xl text-sm font-semibold hover:bg-leaf-50 transition-colors">
+            প্রশ্ন করুন
+          </a>
+        </div>
+      </div>
+
+      <!-- FAQ Accordion -->
+      <div class="space-y-3">
+        <template x-for="(faq, idx) in filteredFaqs" :key="faq.id">
+          <div :class="openItem===faq.id ? 'open':''" class="faq-card fade-up" :style="`animation-delay:${idx*0.04}s`">
+            <button class="faq-btn" @click="openItem = openItem===faq.id ? null : faq.id">
+              <div class="faq-num" x-text="idx+1"></div>
+              <div class="flex-1">
+                <div class="font-bold text-leaf-900 text-sm leading-snug" x-html="highlight(faq.q)"></div>
+                <div x-show="openItem!==faq.id" class="text-xs text-gray-400 mt-1 line-clamp-1" x-text="faq.a.substring(0,60)+'...'"></div>
+              </div>
+              <span class="faq-chevron">▼</span>
+            </button>
+
+            <div :class="openItem===faq.id ? 'open':''" class="faq-body">
+              <div class="px-5 pb-5 ml-10">
+                <div class="bg-leaf-50 rounded-2xl p-4 border-l-4 border-leaf-400">
+                  <p class="text-sm text-gray-700 leading-relaxed" x-html="highlight(faq.a)"></p>
+
+                  <!-- Extra links if any -->
+                  <div x-show="faq.link" class="mt-3">
+                    <a :href="faq.link" class="inline-flex items-center gap-1 text-xs text-leaf-600 hover:text-leaf-800 font-semibold transition-colors">
+                      বিস্তারিত জানুন →
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="flex flex-wrap gap-1.5 mt-3">
+                  <template x-for="tag in faq.tags">
+                    <span @click="searchQ=tag;filterFaqs()"
+                          class="text-[11px] bg-white border border-leaf-200 text-leaf-600 px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-leaf-50 transition-colors"
+                          x-text="'#'+tag"></span>
+                  </template>
+                </div>
+
+                <!-- Helpful voting -->
+                <div class="flex items-center gap-3 mt-4 pt-4 border-t border-leaf-100">
+                  <span class="text-xs text-gray-400">এই উত্তরটি কি সহায়ক ছিল?</span>
+                  <button @click="vote(faq.id, 'yes')"
+                          :class="faq.voted==='yes' ? 'voted':''"
+                          class="vote-btn">
+                    👍 হ্যাঁ (<span x-text="faq.yes"></span>)
+                  </button>
+                  <button @click="vote(faq.id, 'no')"
+                          :class="faq.voted==='no' ? 'voted':''"
+                          class="vote-btn">
+                    👎 না (<span x-text="faq.no"></span>)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ══ STILL NEED HELP ══ -->
+<section class="py-14 bg-gradient-to-br from-leaf-900 to-leaf-700 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-5" style="background-image:radial-gradient(white 1px,transparent 1px);background-size:28px 28px"></div>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center relative">
+    <div class="text-5xl mb-4">🤝</div>
+    <h2 class="text-3xl font-black text-white mb-3">এখনও প্রশ্ন আছে?</h2>
+    <p class="text-white/65 text-sm mb-8 max-w-xl mx-auto leading-relaxed">
+      উপরে উত্তর না পেলে আমাদের সাপোর্ট টিমের সাথে সরাসরি কথা বলুন। আমরা সবসময় আপনার সাহায্যে প্রস্তুত।
+    </p>
+    <div class="grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+      <a href="tel:01908597470" class="bg-white/10 border border-white/20 text-white rounded-2xl p-4 hover:bg-white/20 transition-all text-center">
+        <div class="text-3xl mb-2">📞</div>
+        <div class="font-bold text-sm">ফোনে কথা বলুন</div>
+        <div class="text-white/60 text-xs mt-1">০১৯০৮-৫৯৭৪৭০</div>
+      </a>
+      <a href="https://wa.me/01908597470" class="bg-green-500/80 border border-green-400/40 text-white rounded-2xl p-4 hover:bg-green-500 transition-all text-center">
+        <div class="text-3xl mb-2">💬</div>
+        <div class="font-bold text-sm">WhatsApp করুন</div>
+        <div class="text-white/80 text-xs mt-1">৫ মিনিটে রিপ্লাই</div>
+      </a>
+      <a href="contact.html" class="bg-white/10 border border-white/20 text-white rounded-2xl p-4 hover:bg-white/20 transition-all text-center">
+        <div class="text-3xl mb-2">✉️</div>
+        <div class="font-bold text-sm">বার্তা পাঠান</div>
+        <div class="text-white/60 text-xs mt-1">২৪ ঘণ্টায় উত্তর</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer class="bg-leaf-900 text-white pt-10 pb-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-xl">🌿</div>
+          <div class="font-serif font-bold">কৃষি বাজার</div>
+        </div>
+        <p class="text-white/40 text-xs leading-relaxed">২০১৭ সাল থেকে বাংলাদেশের কৃষকদের পাশে।</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">পেজসমূহ</h4>
+        <ul class="space-y-1.5">
+          <li><a href="index.html"  class="text-white/45 text-xs hover:text-white transition-colors">হোম</a></li>
+          <li><a href="about.html"  class="text-white/45 text-xs hover:text-white transition-colors">আমাদের সম্পর্কে</a></li>
+          <li><a href="shop.html"   class="text-white/45 text-xs hover:text-white transition-colors">শপ</a></li>
+          <li><a href="blog.html"   class="text-white/45 text-xs hover:text-white transition-colors">ব্লগ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">সাপোর্ট</h4>
+        <ul class="space-y-1.5">
+          <li><a href="faq.html"           class="text-white/45 text-xs hover:text-white transition-colors">সাধারণ প্রশ্ন</a></li>
+          <li><a href="refund-policy.html" class="text-white/45 text-xs hover:text-white transition-colors">রিফান্ড নীতি</a></li>
+          <li><a href="terms.html"         class="text-white/45 text-xs hover:text-white transition-colors">শর্তাবলী</a></li>
+          <li><a href="contact.html"       class="text-white/45 text-xs hover:text-white transition-colors">যোগাযোগ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">যোগাযোগ</h4>
+        <p class="text-white/45 text-xs">📞 ০১৯০৮-৫৯৭৪৭০</p>
+        <p class="text-white/45 text-xs mt-1">✉️ info@krishibazar.com.bd</p>
+        <p class="text-white/45 text-xs mt-1">📍 রংপুর, বাংলাদেশ</p>
+      </div>
+    </div>
+    <div class="pt-5 text-center">
+      <p class="text-white/30 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/01908597470" target="_blank"
+   class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-xl hover:bg-green-600 hover:scale-110 transition-all z-50">💬</a>
+
+<script>
+function faqApp() {
+  return {
+    scrolled: false,
+    mobileMenu: false,
+    searchQ: '',
+    activeCategory: 'সব',
+    openItem: null,
+    openAll: null,
+
+    categories: [
+      { id:'order',    icon:'📦', name:'অর্ডার' },
+      { id:'delivery', icon:'🚚', name:'ডেলিভারি' },
+      { id:'payment',  icon:'💳', name:'পেমেন্ট' },
+      { id:'return',   icon:'↩️', name:'রিটার্ন' },
+      { id:'product',  icon:'🌿', name:'পণ্য' },
+      { id:'account',  icon:'👤', name:'অ্যাকাউন্ট' },
+      { id:'farming',  icon:'👨‍🌾', name:'কৃষি পরামর্শ' },
+    ],
+
+    popularTags: ['ডেলিভারি সময়','ফ্রি ডেলিভারি','রিফান্ড','bKash','ক্যাশ অন ডেলিভারি','ট্র্যাকিং','বাতিল'],
+
+    allFaqs: [
+      // অর্ডার
+      { id:1,  cat:'order',    q:'কীভাবে অর্ডার করতে হয়?',                       a:'আমাদের ওয়েবসাইটে পণ্য বেছে কার্টে যোগ করুন, তারপর চেকআউটে গিয়ে আপনার তথ্য ও পেমেন্ট পদ্ধতি নির্বাচন করুন। অর্ডার নিশ্চিত হলে আপনার মোবাইলে SMS পাঠানো হবে।', tags:['অর্ডার','প্রক্রিয়া'], yes:34, no:2, voted:null, link:'shop.html' },
+      { id:2,  cat:'order',    q:'অর্ডার দেওয়ার পর পরিবর্তন করা যাবে?',          a:'অর্ডার প্রক্রিয়া শুরুর আগে পরিবর্তন করা যাবে। অর্ডার দেওয়ার ১ ঘণ্টার মধ্যে আমাদের ০১৯০৮-৫৯৭৪৭০ নম্বরে ফোন করুন। ডেলিভারি শুরু হলে আর পরিবর্তন করা যাবে না।', tags:['অর্ডার','পরিবর্তন'], yes:28, no:4, voted:null, link:null },
+      { id:3,  cat:'order',    q:'অর্ডার বাতিল করতে পারবো?',                     a:'অর্ডার প্রক্রিয়া শুরুর আগে যেকোনো সময় বাতিল করা যাবে। ডেলিভারিতে পাঠানো হলে বাতিল সম্ভব নয়। অর্ডার বাতিলের জন্য ০১৯০৮-৫৯৭৪৭০ নম্বরে ফোন করুন।', tags:['বাতিল','অর্ডার'], yes:41, no:3, voted:null, link:null },
+      { id:4,  cat:'order',    q:'অর্ডারের স্ট্যাটাস কীভাবে জানবো?',             a:'আমাদের ওয়েবসাইটে লগইন করে "আমার অর্ডার" বিভাগ থেকে অর্ডারের স্ট্যাটাস দেখতে পারবেন। এছাড়া SMS ও ইমেইলেও আপডেট পাঠানো হয়। অর্ডার নম্বর দিয়ে সরাসরি ট্র্যাক করতে পারবেন।', tags:['ট্র্যাকিং','স্ট্যাটাস'], yes:55, no:1, voted:null, link:null },
+      { id:5,  cat:'order',    q:'ন্যূনতম অর্ডার পরিমাণ কত?',                    a:'কোনো ন্যূনতম অর্ডার পরিমাণ নেই। যেকোনো পরিমাণের অর্ডার করা যাবে। তবে ৫০০ টাকার উপরে অর্ডারে ডেলিভারি চার্জ বিনামূল্যে।', tags:['ন্যূনতম','অর্ডার'], yes:38, no:0, voted:null, link:null },
+
+      // ডেলিভারি
+      { id:6,  cat:'delivery', q:'ডেলিভারি কত দিনে পাবো?',                       a:'ঢাকা ও চট্টগ্রামে সাধারণত ১-২ কার্যদিবস। অন্যান্য বিভাগীয় শহরে ২-৩ কার্যদিবস। দুর্গম এলাকায় ৩-৫ কার্যদিবস লাগতে পারে। এক্সপ্রেস ডেলিভারিতে ১ কার্যদিবসেই পাওয়া সম্ভব।', tags:['ডেলিভারি সময়','দ্রুত'], yes:89, no:5, voted:null, link:null },
+      { id:7,  cat:'delivery', q:'ফ্রি ডেলিভারি কখন পাওয়া যাবে?',               a:'৫০০ টাকার উপরে যেকোনো অর্ডারে ডেলিভারি বিনামূল্যে। ৫০০ টাকার কম অর্ডারে ৭০ টাকা ডেলিভারি চার্জ প্রযোজ্য। বিশেষ অফারে কখনো কখনো সব অর্ডারে ফ্রি ডেলিভারি দেওয়া হয়।', tags:['ফ্রি ডেলিভারি','চার্জ'], yes:112, no:8, voted:null, link:null },
+      { id:8,  cat:'delivery', q:'সারা বাংলাদেশে কি ডেলিভারি দেওয়া হয়?',       a:'হ্যাঁ, বাংলাদেশের ৬৪টি জেলায় ডেলিভারি দেওয়া হয়। প্রত্যন্ত এলাকায় সময় একটু বেশি লাগতে পারে তবে পৌঁছানো সম্ভব।', tags:['ডেলিভারি','৬৪ জেলা'], yes:67, no:2, voted:null, link:null },
+      { id:9,  cat:'delivery', q:'ডেলিভারিম্যান না পেলে কী করবো?',               a:'ডেলিভারিম্যান আসার আগে আপনাকে কল করবেন। যদি না পাওয়া যায় তাহলে পুনরায় ডেলিভারির চেষ্টা করা হবে। তিনবার চেষ্টার পরেও না পেলে অর্ডার বাতিল হবে এবং অর্থ ফেরত দেওয়া হবে।', tags:['ডেলিভারি','ব্যর্থ'], yes:45, no:6, voted:null, link:null },
+
+      // পেমেন্ট
+      { id:10, cat:'payment',  q:'কোন কোন পেমেন্ট পদ্ধতি আছে?',                  a:'আমরা bKash, Nagad, Rocket, VISA/Mastercard কার্ড এবং ক্যাশ অন ডেলিভারি গ্রহণ করি। অনলাইন পেমেন্টে কোনো অতিরিক্ত চার্জ নেই।', tags:['পেমেন্ট','bKash','Nagad'], yes:78, no:3, voted:null, link:null },
+      { id:11, cat:'payment',  q:'পেমেন্ট কি নিরাপদ?',                            a:'হ্যাঁ, আমাদের পেমেন্ট সিস্টেম SSL এনক্রিপ্টেড এবং BSTI সনদপ্রাপ্ত। আপনার কার্ড বা মোবাইল ব্যাংকিং তথ্য সম্পূর্ণ নিরাপদ। আমরা কোনো কার্ড তথ্য সংরক্ষণ করি না।', tags:['নিরাপদ','SSL'], yes:56, no:1, voted:null, link:null },
+      { id:12, cat:'payment',  q:'bKash-এ কীভাবে পেমেন্ট করবো?',                 a:'চেকআউটে bKash বেছে নিন। আপনার bKash নম্বর দিন। আপনার মোবাইলে পেমেন্ট রিকোয়েস্ট আসবে। PIN দিয়ে কনফার্ম করুন। পেমেন্ট সফল হলে অর্ডার স্বয়ংক্রিয়ভাবে নিশ্চিত হবে।', tags:['bKash','পেমেন্ট'], yes:94, no:4, voted:null, link:null },
+      { id:13, cat:'payment',  q:'ক্যাশ অন ডেলিভারি কি সব জায়গায় পাওয়া যায়?', a:'হ্যাঁ, সারা বাংলাদেশে ক্যাশ অন ডেলিভারি সুবিধা পাওয়া যায়। পণ্য বুঝে নেওয়ার পর টাকা পরিশোধ করুন। কোনো অতিরিক্ত চার্জ নেই।', tags:['ক্যাশ অন ডেলিভারি','COD'], yes:103, no:7, voted:null, link:null },
+
+      // রিটার্ন
+      { id:14, cat:'return',   q:'পণ্য ফেরত দেওয়ার নিয়ম কী?',                   a:'ডেলিভারির ৭ দিনের মধ্যে পণ্য অক্ষত অবস্থায় ফেরত দেওয়া যাবে। পণ্যের প্যাকেজিং অক্ষুণ্ণ রাখতে হবে। রিটার্নের কারণ জানিয়ে ০১৯০৮-৫৯৭৪৭০ নম্বরে কল করুন।', tags:['রিটার্ন','ফেরত'], yes:71, no:9, voted:null, link:'refund-policy.html' },
+      { id:15, cat:'return',   q:'রিফান্ড কতদিনে পাবো?',                          a:'রিটার্ন পণ্য পাওয়ার ৩-৫ কার্যদিবসের মধ্যে রিফান্ড দেওয়া হয়। অনলাইন পেমেন্টে একই মাধ্যমে ফেরত যাবে। ক্যাশ অন ডেলিভারিতে bKash/Nagad-এ পাঠানো হবে।', tags:['রিফান্ড','অর্থ ফেরত'], yes:88, no:6, voted:null, link:'refund-policy.html' },
+      { id:16, cat:'return',   q:'ভুল পণ্য পেলে কী করবো?',                        a:'ডেলিভারির সময় বা পরেই আমাদের জানান। ছবি তুলে WhatsApp করুন অথবা ফোন করুন। আমরা দ্রুত সঠিক পণ্য পাঠাবো এবং ভুল পণ্য ফেরত নেবো — কোনো অতিরিক্ত চার্জ নেই।', tags:['ভুল পণ্য','রিটার্ন'], yes:65, no:3, voted:null, link:null },
+
+      // পণ্য
+      { id:17, cat:'product',  q:'পণ্য কি সত্যিই খাঁটি ও বিষমুক্ত?',              a:'হ্যাঁ, আমাদের প্রতিটি পণ্য সরাসরি কৃষক ও বিশ্বস্ত সরবরাহকারী থেকে সংগ্রহ করা হয়। প্রতিটি ব্যাচ BSTI অনুমোদিত ল্যাবে পরীক্ষা করা হয়। আমাদের ১০০% মানের গ্যারান্টি আছে।', tags:['খাঁটি','মান','বিষমুক্ত'], yes:145, no:5, voted:null, link:null },
+      { id:18, cat:'product',  q:'পণ্যের মেয়াদ কীভাবে জানবো?',                   a:'প্রতিটি পণ্যের প্যাকেজে উৎপাদন ও মেয়াদ উত্তীর্ণের তারিখ উল্লেখ থাকে। ওয়েবসাইটেও পণ্যের বিবরণে মেয়াদের তথ্য দেওয়া আছে।', tags:['মেয়াদ','প্যাকেজিং'], yes:49, no:2, voted:null, link:null },
+      { id:19, cat:'product',  q:'স্টক শেষ হলে কি জানানো যাবে?',                 a:'হ্যাঁ, পণ্যের পেজে "স্টক শেষ হলে জানান" বাটনে ক্লিক করে আপনার নম্বর দিন। পণ্য পুনরায় স্টকে আসলে SMS পাঠানো হবে।', tags:['স্টক','নোটিফিকেশন'], yes:33, no:1, voted:null, link:null },
+
+      // অ্যাকাউন্ট
+      { id:20, cat:'account',  q:'অ্যাকাউন্ট না থাকলে কি অর্ডার করা যাবে?',      a:'হ্যাঁ, গেস্ট হিসেবেও অর্ডার করা যাবে। তবে অ্যাকাউন্ট থাকলে অর্ডার ট্র্যাক করা, অর্ডার ইতিহাস দেখা এবং দ্রুত চেকআউটের সুবিধা পাবেন।', tags:['অ্যাকাউন্ট','গেস্ট'], yes:62, no:4, voted:null, link:null },
+      { id:21, cat:'account',  q:'পাসওয়ার্ড ভুলে গেলে কী করবো?',                a:'লগইন পেজে "পাসওয়ার্ড ভুলে গেছি" বাটনে ক্লিক করুন। আপনার ইমেইল বা মোবাইল নম্বর দিন। OTP পাঠানো হবে। নতুন পাসওয়ার্ড সেট করুন।', tags:['পাসওয়ার্ড','অ্যাকাউন্ট'], yes:44, no:3, voted:null, link:null },
+
+      // কৃষি পরামর্শ
+      { id:22, cat:'farming',  q:'কোন সার কোন ফসলে দেওয়া উচিত?',                a:'ফসলের ধরন অনুযায়ী সার প্রয়োগ করতে হয়। আমাদের কৃষি বিশেষজ্ঞ দলের সাথে যোগাযোগ করুন। ব্লগেও বিস্তারিত গাইড পাবেন। সাধারণত ধানে ইউরিয়া+DAP, সবজিতে জৈব সার ভালো কাজ করে।', tags:['সার','ফসল','পরামর্শ'], yes:87, no:8, voted:null, link:'blog.html' },
+      { id:23, cat:'farming',  q:'কৃষি বিশেষজ্ঞের পরামর্শ কি বিনামূল্যে?',       a:'হ্যাঁ, আমাদের কৃষি বিশেষজ্ঞ দলের পরামর্শ সম্পূর্ণ বিনামূল্যে। ফোন বা WhatsApp-এ যোগাযোগ করুন। আমরা ফসল চাষ, রোগ-বালাই দমন ও সার প্রয়োগ বিষয়ে সাহায্য করি।', tags:['বিশেষজ্ঞ','পরামর্শ','বিনামূল্যে'], yes:93, no:2, voted:null, link:null },
+    ],
+
+    filteredFaqs: [],
+
+    init() {
+      this.filteredFaqs = [...this.allFaqs];
+    },
+
+    setCategory(cat) {
+      this.activeCategory = cat;
+      this.openItem = null;
+      this.filterFaqs();
+    },
+
+    filterFaqs() {
+      let results = [...this.allFaqs];
+      if (this.activeCategory !== 'সব') {
+        results = results.filter(f => f.cat === this.activeCategory);
+      }
+      if (this.searchQ.trim()) {
+        const q = this.searchQ.toLowerCase();
+        results = results.filter(f =>
+          f.q.toLowerCase().includes(q) ||
+          f.a.toLowerCase().includes(q) ||
+          f.tags.some(t => t.toLowerCase().includes(q))
+        );
+      }
+      this.filteredFaqs = results;
+    },
+
+    highlight(text) {
+      if (!this.searchQ.trim()) return text;
+      const escaped = this.searchQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return text.replace(new RegExp(escaped, 'gi'), m => `<mark class="highlight">${m}</mark>`);
+    },
+
+    vote(id, type) {
+      const faq = this.allFaqs.find(f => f.id === id);
+      if (!faq || faq.voted) return;
+      faq.voted = type;
+      if (type === 'yes') faq.yes++;
+      else faq.no++;
+    },
+  }
+}
+</script>
+
+</body>
+</html>
