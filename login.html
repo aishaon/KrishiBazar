@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="authApp()">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>লগইন / নিবন্ধন — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: { serif: ['Noto Serif Bengali','serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; min-height:100vh; }
+
+    /* Split layout */
+    .auth-left{
+      background:linear-gradient(145deg,#0a300a 0%,#1e7e1e 50%,#4ab94a 100%);
+      position:relative; overflow:hidden;
+    }
+    .auth-left::before{
+      content:''; position:absolute; inset:0;
+      background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fff' fill-opacity='.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* Form */
+    .form-label{ font-size:13px; font-weight:600; color:#104810; margin-bottom:5px; display:block; }
+    .form-input{
+      width:100%; padding:12px 16px; border-radius:14px;
+      border:2px solid #d6f5d6; background:#f9fffe;
+      font-size:14px; transition:all .2s; outline:none;
+    }
+    .form-input:focus{ border-color:#1e7e1e; background:white; box-shadow:0 0 0 4px rgba(30,126,30,.08); }
+    .form-input.error{ border-color:#ef4444; background:#fff5f5; }
+    .error-msg{ font-size:11px; color:#ef4444; margin-top:4px; display:flex; align-items:center; gap:4px; }
+
+    /* Password strength */
+    .strength-bar{ height:4px; border-radius:2px; transition:all .3s ease; }
+
+    /* Tab slider */
+    .tab-slider{
+      position:absolute; height:calc(100% - 8px); top:4px;
+      border-radius:10px;
+      background:white; box-shadow:0 2px 8px rgba(0,0,0,.1);
+      transition:all .35s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    /* Social btn */
+    .social-btn{
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      padding:12px; border-radius:14px; border:2px solid #e5e7eb;
+      background:white; font-size:14px; font-weight:600; color:#374151;
+      cursor:pointer; transition:all .2s ease; width:100%;
+    }
+    .social-btn:hover{ border-color:#a8e8a8; background:#f9fffe; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+
+    /* OTP inputs */
+    .otp-input{
+      width:52px; height:56px; text-align:center; font-size:22px; font-weight:800;
+      border:2px solid #d6f5d6; border-radius:14px; background:#f9fffe;
+      outline:none; transition:all .2s; color:#0a300a;
+    }
+    .otp-input:focus{ border-color:#1e7e1e; background:white; box-shadow:0 0 0 4px rgba(30,126,30,.1); transform:scale(1.05); }
+    .otp-input.filled{ border-color:#1e7e1e; background:#f0faf0; }
+
+    /* Checkbox custom */
+    .custom-check{ width:18px; height:18px; border-radius:5px; border:2px solid #a8e8a8;
+      background:white; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .2s; flex-shrink:0; }
+    .custom-check.checked{ background:#1e7e1e; border-color:#1e7e1e; }
+
+    /* Submit btn */
+    .submit-btn{
+      background:linear-gradient(135deg,#1e7e1e,#2e9c2e);
+      transition:all .3s ease;
+    }
+    .submit-btn:hover{ background:linear-gradient(135deg,#166116,#1e7e1e); transform:translateY(-2px); box-shadow:0 10px 24px rgba(30,126,30,.4); }
+    .submit-btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    /* Float animation */
+    @keyframes float{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+    .float-1{ animation:float 5s ease-in-out infinite; }
+    .float-2{ animation:float 7s ease-in-out infinite 1s; }
+    .float-3{ animation:float 6s ease-in-out infinite 2s; }
+
+    @keyframes fadeUp{ from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up{ animation:fadeUp .45s ease forwards; }
+    @keyframes slideLeft{ from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    .slide-left{ animation:slideLeft .35s ease forwards; }
+    @keyframes popIn{ 0%{transform:scale(.7);opacity:0} 80%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+    .pop-in{ animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+    @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .shake{ animation:shake .35s ease; }
+
+    .divider-line{ flex:1; height:1px; background:#e5e7eb; }
+
+    /* Step indicator */
+    .reg-step{ width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; transition:all .3s; }
+    .reg-step.done{ background:#1e7e1e; color:white; box-shadow:0 4px 12px rgba(30,126,30,.3); }
+    .reg-step.active{ background:linear-gradient(135deg,#b8692a,#d9a96a); color:white; box-shadow:0 4px 12px rgba(184,105,42,.3); }
+    .reg-step.pending{ background:#f0faf0; color:#9ca3af; border:2px solid #d6f5d6; }
+    .step-line{ flex:1; height:2px; margin:0 4px; }
+    .step-line.done{ background:#1e7e1e; }
+    .step-line.pending{ background:#e5e7eb; }
+  </style>
+</head>
+<body>
+
+<!-- ══ FULL PAGE LAYOUT ══ -->
+<div class="min-h-screen flex flex-col lg:flex-row">
+
+  <!-- ── LEFT: Brand Panel ── -->
+  <div class="auth-left lg:w-[45%] p-8 lg:p-12 flex flex-col justify-between relative lg:sticky lg:top-0 lg:h-screen">
+
+    <!-- Logo -->
+    <a href="index.html" class="flex items-center gap-3 relative z-10">
+      <div class="w-12 h-12 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center text-2xl border border-white/25 shadow-lg">🌿</div>
+      <div>
+        <div class="font-serif font-bold text-white text-xl leading-none">কৃষি বাজার</div>
+        <div class="text-white/60 text-xs mt-0.5">দেশের কৃষির অনলাইন হাট</div>
+      </div>
+    </a>
+
+    <!-- Center content -->
+    <div class="relative z-10 py-8">
+      <!-- Floating emojis -->
+      <div class="absolute -top-4 right-0 text-6xl opacity-20 float-1">🌾</div>
+      <div class="absolute top-20 left-0 text-5xl opacity-15 float-2">🌿</div>
+      <div class="absolute bottom-0 right-8 text-4xl opacity-15 float-3">🍯</div>
+
+      <h1 class="text-4xl lg:text-5xl font-black text-white leading-tight mb-5">
+        কৃষির সেরা<br/>পণ্য পান<br/><span class="text-yellow-300">ঘরে বসে</span>
+      </h1>
+      <p class="text-white/70 text-sm leading-relaxed mb-8 max-w-xs">
+        অ্যাকাউন্ট তৈরি করুন এবং ৫০০+ কৃষি পণ্যের বিশাল সংগ্রহ থেকে কেনাকাটা উপভোগ করুন।
+      </p>
+
+      <!-- Feature list -->
+      <div class="space-y-3">
+        <template x-for="feat in features">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-white/15 rounded-xl flex items-center justify-center text-lg shrink-0" x-text="feat.icon"></div>
+            <span class="text-white/80 text-sm" x-text="feat.text"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Bottom stats -->
+    <div class="relative z-10 grid grid-cols-3 gap-4 pt-6 border-t border-white/15">
+      <div class="text-center">
+        <div class="text-2xl font-black text-yellow-300">১লক্ষ+</div>
+        <div class="text-white/50 text-xs mt-0.5">ক্রেতা</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black text-yellow-300">৫০০+</div>
+        <div class="text-white/50 text-xs mt-0.5">পণ্য</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black text-yellow-300">৬৪</div>
+        <div class="text-white/50 text-xs mt-0.5">জেলা</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Auth Forms ── -->
+  <div class="flex-1 flex items-center justify-center p-6 lg:p-12">
+    <div class="w-full max-w-md">
+
+      <!-- Tab Switcher -->
+      <div class="relative bg-leaf-100 rounded-2xl p-1 flex mb-8">
+        <div class="tab-slider" :style="activeForm==='login'?'left:4px;width:calc(50% - 4px)':'left:calc(50%);width:calc(50% - 4px)'"></div>
+        <button @click="activeForm='login';resetForms()" class="flex-1 py-2.5 text-sm font-bold relative z-10 transition-colors rounded-xl" :class="activeForm==='login'?'text-leaf-800':'text-leaf-600'">
+          🔑 লগইন
+        </button>
+        <button @click="activeForm='register';resetForms()" class="flex-1 py-2.5 text-sm font-bold relative z-10 transition-colors rounded-xl" :class="activeForm==='register'?'text-leaf-800':'text-leaf-600'">
+          ✨ নিবন্ধন
+        </button>
+      </div>
+
+      <!-- ════ LOGIN FORM ════ -->
+      <div x-show="activeForm==='login'" class="slide-left space-y-5">
+
+        <!-- OTP Login / Password Login toggle -->
+        <div x-show="!showOtp">
+          <h2 class="text-2xl font-black text-leaf-900 mb-1">স্বাগতম ফিরে!</h2>
+          <p class="text-gray-400 text-sm mb-6">আপনার অ্যাকাউন্টে প্রবেশ করুন।</p>
+
+          <!-- Social Login -->
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <button class="social-btn">
+              <span class="text-xl">🔵</span> <span>Google</span>
+            </button>
+            <button class="social-btn">
+              <span class="text-xl">📘</span> <span>Facebook</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-3 mb-5">
+            <div class="divider-line"></div>
+            <span class="text-xs text-gray-400 shrink-0">অথবা ইমেইল/মোবাইল দিয়ে</span>
+            <div class="divider-line"></div>
+          </div>
+
+          <!-- Login type toggle -->
+          <div class="flex bg-leaf-50 rounded-xl p-1 gap-1 mb-5">
+            <button @click="loginType='phone'" :class="loginType==='phone'?'bg-white shadow-sm text-leaf-800 font-bold':'text-gray-500'" class="flex-1 py-2 rounded-lg text-xs font-medium transition-all">📱 মোবাইল + OTP</button>
+            <button @click="loginType='password'" :class="loginType==='password'?'bg-white shadow-sm text-leaf-800 font-bold':'text-gray-500'" class="flex-1 py-2 rounded-lg text-xs font-medium transition-all">🔒 পাসওয়ার্ড</button>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Phone/Email -->
+            <div>
+              <label class="form-label" x-text="loginType==='phone'?'মোবাইল নম্বর':'ইমেইল বা মোবাইল'"></label>
+              <input x-model="login.identifier" type="text"
+                     :placeholder="loginType==='phone'?'০১XXXXXXXXX':'ইমেইল বা মোবাইল নম্বর'"
+                     :class="loginErrors.identifier?'error':''"
+                     class="form-input"/>
+              <p x-show="loginErrors.identifier" class="error-msg"><span>⚠️</span><span x-text="loginErrors.identifier"></span></p>
+            </div>
+
+            <!-- Password (only if password login) -->
+            <div x-show="loginType==='password'">
+              <label class="form-label">পাসওয়ার্ড</label>
+              <div class="relative">
+                <input x-model="login.password" :type="showLoginPw?'text':'password'" placeholder="আপনার পাসওয়ার্ড"
+                       :class="loginErrors.password?'error':''"
+                       class="form-input pr-12"/>
+                <button @click="showLoginPw=!showLoginPw" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-leaf-600 transition-colors">
+                  <span x-text="showLoginPw?'🙈':'👁'"></span>
+                </button>
+              </div>
+              <p x-show="loginErrors.password" class="error-msg"><span>⚠️</span><span x-text="loginErrors.password"></span></p>
+            </div>
+
+            <!-- Remember + Forgot -->
+            <div x-show="loginType==='password'" class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <div @click="login.remember=!login.remember" :class="login.remember?'checked':''" class="custom-check">
+                  <span x-show="login.remember" class="text-white text-xs font-black">✓</span>
+                </div>
+                <span class="text-sm text-gray-500">মনে রাখুন</span>
+              </label>
+              <button @click="activeForm='forgot'" class="text-sm text-leaf-600 hover:text-leaf-800 font-semibold transition-colors">পাসওয়ার্ড ভুলেছেন?</button>
+            </div>
+
+            <!-- Submit -->
+            <button @click="doLogin()" :disabled="loginLoading"
+                    class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base shadow-lg">
+              <span x-show="!loginLoading">
+                <span x-text="loginType==='phone'?'📱 OTP পাঠান':'🔑 লগইন করুন'"></span>
+              </span>
+              <span x-show="loginLoading" class="flex items-center justify-center gap-2">
+                <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle><path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                প্রবেশ হচ্ছে...
+              </span>
+            </button>
+
+            <!-- Error -->
+            <div x-show="loginError" x-transition class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl flex items-center gap-2 shake">
+              ❌ <span x-text="loginError"></span>
+            </div>
+          </div>
+
+          <p class="text-center text-sm text-gray-400 mt-5">
+            অ্যাকাউন্ট নেই?
+            <button @click="activeForm='register';resetForms()" class="text-leaf-600 font-bold hover:text-leaf-800 transition-colors">নিবন্ধন করুন</button>
+          </p>
+        </div>
+
+        <!-- OTP Verification -->
+        <div x-show="showOtp" class="slide-left">
+          <button @click="showOtp=false" class="flex items-center gap-1.5 text-leaf-600 hover:text-leaf-800 text-sm font-medium mb-5 transition-colors">
+            ← ফিরে যান
+          </button>
+          <h2 class="text-2xl font-black text-leaf-900 mb-1">OTP যাচাই করুন</h2>
+          <p class="text-gray-400 text-sm mb-6">
+            <strong class="text-leaf-700" x-text="login.identifier"></strong> নম্বরে ৬ সংখ্যার কোড পাঠানো হয়েছে।
+          </p>
+
+          <!-- OTP boxes -->
+          <div class="flex gap-2 justify-center mb-6">
+            <template x-for="(digit, idx) in otp" :key="idx">
+              <input :value="digit"
+                     @input="handleOtp($event, idx)"
+                     @keydown.backspace="handleOtpBack($event, idx)"
+                     @keydown.left="$el.previousElementSibling?.focus()"
+                     @keydown.right="$el.nextElementSibling?.focus()"
+                     type="text" maxlength="1" inputmode="numeric"
+                     :class="digit?'filled':''"
+                     class="otp-input"/>
+            </template>
+          </div>
+
+          <!-- Demo OTP hint -->
+          <div class="bg-leaf-50 rounded-xl px-4 py-2.5 flex items-center gap-2 mb-5">
+            <span class="text-leaf-500">💡</span>
+            <span class="text-xs text-leaf-700">ডেমো কোড: <strong>১২৩৪৫৬</strong></span>
+          </div>
+
+          <button @click="verifyOtp()"
+                  class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base shadow-lg mb-4">
+            ✅ যাচাই করুন
+          </button>
+
+          <!-- Resend -->
+          <div class="text-center text-sm text-gray-400">
+            কোড পাননি?
+            <button x-show="resendTimer===0" @click="startResend()" class="text-leaf-600 font-bold hover:text-leaf-800 transition-colors">আবার পাঠান</button>
+            <span x-show="resendTimer>0" class="text-gray-400">
+              <span x-text="resendTimer"></span> সেকেন্ড পরে আবার পাঠান
+            </span>
+          </div>
+
+          <!-- Success -->
+          <div x-show="otpSuccess" x-transition class="mt-4 bg-leaf-50 border border-leaf-200 text-leaf-700 text-sm px-4 py-3 rounded-xl flex items-center gap-2 pop-in">
+            ✅ লগইন সফল! রিডাইরেক্ট হচ্ছে...
+          </div>
+          <div x-show="otpError" x-transition class="mt-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl flex items-center gap-2 shake">
+            ❌ ভুল কোড! আবার চেষ্টা করুন।
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ REGISTER FORM ════ -->
+      <div x-show="activeForm==='register'" class="slide-left space-y-5">
+
+        <!-- Step indicator -->
+        <div class="flex items-center mb-6">
+          <template x-for="(step, idx) in regSteps" :key="idx">
+            <div class="flex items-center flex-1" :class="idx===regSteps.length-1?'flex-none':''">
+              <div class="flex flex-col items-center gap-1">
+                <div class="reg-step" :class="regStep>idx?'done':(regStep===idx?'active':'pending')">
+                  <span x-text="regStep>idx?'✓':(idx+1)"></span>
+                </div>
+                <span class="text-[10px] text-center leading-tight" :class="regStep>=idx?'text-leaf-700 font-semibold':'text-gray-400'" x-text="step"></span>
+              </div>
+              <div x-show="idx<regSteps.length-1" class="step-line flex-1 mb-4" :class="regStep>idx?'done':'pending'"></div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Step 1: Basic Info -->
+        <div x-show="regStep===0" class="slide-left space-y-4">
+          <div>
+            <h2 class="text-2xl font-black text-leaf-900 mb-1">অ্যাকাউন্ট তৈরি করুন</h2>
+            <p class="text-gray-400 text-sm">আপনার তথ্য দিয়ে শুরু করুন।</p>
+          </div>
+
+          <!-- Social signup -->
+          <div class="grid grid-cols-2 gap-3">
+            <button class="social-btn"><span class="text-xl">🔵</span> Google</button>
+            <button class="social-btn"><span class="text-xl">📘</span> Facebook</button>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="divider-line"></div>
+            <span class="text-xs text-gray-400 shrink-0">অথবা নিজে পূরণ করুন</span>
+            <div class="divider-line"></div>
+          </div>
+
+          <div>
+            <label class="form-label">পূর্ণ নাম *</label>
+            <input x-model="reg.name" type="text" placeholder="আপনার পূর্ণ নাম"
+                   :class="regErrors.name?'error':''" class="form-input"/>
+            <p x-show="regErrors.name" class="error-msg">⚠️ <span x-text="regErrors.name"></span></p>
+          </div>
+          <div>
+            <label class="form-label">মোবাইল নম্বর *</label>
+            <input x-model="reg.phone" type="tel" placeholder="০১XXXXXXXXX"
+                   :class="regErrors.phone?'error':''" class="form-input"/>
+            <p x-show="regErrors.phone" class="error-msg">⚠️ <span x-text="regErrors.phone"></span></p>
+          </div>
+          <div>
+            <label class="form-label">ইমেইল (ঐচ্ছিক)</label>
+            <input x-model="reg.email" type="email" placeholder="example@email.com" class="form-input"/>
+          </div>
+
+          <button @click="validateReg1()" class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base shadow-lg">
+            পরবর্তী ধাপ →
+          </button>
+        </div>
+
+        <!-- Step 2: Password -->
+        <div x-show="regStep===1" class="slide-left space-y-4">
+          <div>
+            <button @click="regStep=0" class="flex items-center gap-1.5 text-leaf-600 hover:text-leaf-800 text-sm font-medium mb-3 transition-colors">← আগে ফিরুন</button>
+            <h2 class="text-2xl font-black text-leaf-900 mb-1">পাসওয়ার্ড তৈরি করুন</h2>
+            <p class="text-gray-400 text-sm">একটি শক্তিশালী পাসওয়ার্ড দিন।</p>
+          </div>
+
+          <div>
+            <label class="form-label">পাসওয়ার্ড *</label>
+            <div class="relative">
+              <input x-model="reg.password" :type="showRegPw?'text':'password'"
+                     placeholder="কমপক্ষে ৮ অক্ষর"
+                     :class="regErrors.password?'error':''" class="form-input pr-12"
+                     @input="calcStrength()"/>
+              <button @click="showRegPw=!showRegPw" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-leaf-600 transition-colors">
+                <span x-text="showRegPw?'🙈':'👁'"></span>
+              </button>
+            </div>
+            <!-- Strength meter -->
+            <div x-show="reg.password" class="mt-2">
+              <div class="flex gap-1.5 mb-1">
+                <div class="strength-bar flex-1" :style="pwStrength>=1?'background:'+strengthColor:'background:#e5e7eb'"></div>
+                <div class="strength-bar flex-1" :style="pwStrength>=2?'background:'+strengthColor:'background:#e5e7eb'"></div>
+                <div class="strength-bar flex-1" :style="pwStrength>=3?'background:'+strengthColor:'background:#e5e7eb'"></div>
+                <div class="strength-bar flex-1" :style="pwStrength>=4?'background:'+strengthColor:'background:#e5e7eb'"></div>
+              </div>
+              <div class="text-xs font-semibold" :style="'color:'+strengthColor" x-text="strengthLabel"></div>
+            </div>
+            <p x-show="regErrors.password" class="error-msg mt-1">⚠️ <span x-text="regErrors.password"></span></p>
+          </div>
+
+          <div>
+            <label class="form-label">পাসওয়ার্ড নিশ্চিত করুন *</label>
+            <div class="relative">
+              <input x-model="reg.confirm" :type="showRegPw?'text':'password'"
+                     placeholder="পাসওয়ার্ড আবার লিখুন"
+                     :class="regErrors.confirm?'error':( reg.confirm && reg.confirm===reg.password ?'border-leaf-500':'')"
+                     class="form-input pr-12"/>
+              <span x-show="reg.confirm && reg.confirm===reg.password" class="absolute right-4 top-1/2 -translate-y-1/2 text-leaf-500">✓</span>
+            </div>
+            <p x-show="regErrors.confirm" class="error-msg mt-1">⚠️ <span x-text="regErrors.confirm"></span></p>
+          </div>
+
+          <!-- Password tips -->
+          <div class="bg-leaf-50 rounded-xl p-3 space-y-1">
+            <p class="text-xs font-semibold text-leaf-800 mb-1.5">শক্তিশালী পাসওয়ার্ডের জন্য:</p>
+            <template x-for="tip in pwTips">
+              <div class="flex items-center gap-2 text-xs" :class="tip.check(reg.password)?'text-leaf-600':'text-gray-400'">
+                <span x-text="tip.check(reg.password)?'✓':'○'"></span>
+                <span x-text="tip.label"></span>
+              </div>
+            </template>
+          </div>
+
+          <button @click="validateReg2()" class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base shadow-lg">
+            পরবর্তী ধাপ →
+          </button>
+        </div>
+
+        <!-- Step 3: Verify OTP -->
+        <div x-show="regStep===2" class="slide-left space-y-5">
+          <div>
+            <button @click="regStep=1" class="flex items-center gap-1.5 text-leaf-600 hover:text-leaf-800 text-sm font-medium mb-3 transition-colors">← আগে ফিরুন</button>
+            <h2 class="text-2xl font-black text-leaf-900 mb-1">নম্বর যাচাই করুন</h2>
+            <p class="text-gray-400 text-sm">
+              <strong class="text-leaf-700" x-text="reg.phone"></strong> নম্বরে কোড পাঠানো হয়েছে।
+            </p>
+          </div>
+
+          <div class="flex gap-2 justify-center">
+            <template x-for="(digit, idx) in regOtp" :key="idx">
+              <input :value="digit"
+                     @input="handleRegOtp($event, idx)"
+                     @keydown.backspace="handleRegOtpBack($event, idx)"
+                     type="text" maxlength="1" inputmode="numeric"
+                     :class="digit?'filled':''"
+                     class="otp-input"/>
+            </template>
+          </div>
+
+          <div class="bg-leaf-50 rounded-xl px-4 py-2.5 flex items-center gap-2">
+            <span class="text-leaf-500">💡</span>
+            <span class="text-xs text-leaf-700">ডেমো কোড: <strong>১২৩৪৫৬</strong></span>
+          </div>
+
+          <!-- Terms agree -->
+          <label class="flex items-start gap-3 cursor-pointer">
+            <div @click="reg.agreed=!reg.agreed" :class="reg.agreed?'checked':''" class="custom-check mt-0.5">
+              <span x-show="reg.agreed" class="text-white text-xs font-black">✓</span>
+            </div>
+            <span class="text-sm text-gray-500 leading-relaxed">
+              আমি <a href="terms.html" class="text-leaf-600 hover:underline font-medium">শর্তাবলী</a> ও
+              <a href="refund-policy.html" class="text-leaf-600 hover:underline font-medium">রিফান্ড নীতি</a> পড়েছি এবং সম্মত আছি।
+            </span>
+          </label>
+          <p x-show="regErrors.agreed" class="error-msg">⚠️ <span x-text="regErrors.agreed"></span></p>
+
+          <button @click="completeReg()" :disabled="regLoading"
+                  class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base shadow-lg">
+            <span x-show="!regLoading">🎉 নিবন্ধন সম্পন্ন করুন</span>
+            <span x-show="regLoading" class="flex items-center justify-center gap-2">
+              <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle><path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+              নিবন্ধন হচ্ছে...
+            </span>
+          </button>
+
+          <!-- Success -->
+          <div x-show="regSuccess" x-transition class="bg-leaf-50 border-2 border-leaf-300 rounded-2xl p-5 text-center pop-in">
+            <div class="text-4xl mb-2">🎉</div>
+            <h3 class="font-black text-leaf-900 text-lg mb-1">নিবন্ধন সফল!</h3>
+            <p class="text-gray-500 text-sm mb-3">আপনার অ্যাকাউন্ট তৈরি হয়েছে। শপিং উপভোগ করুন!</p>
+            <a href="my-account.html" class="inline-block px-5 py-2.5 bg-leaf-600 text-white rounded-xl text-sm font-bold hover:bg-leaf-700 transition-colors">
+              আমার অ্যাকাউন্টে যান →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ FORGOT PASSWORD ════ -->
+      <div x-show="activeForm==='forgot'" class="slide-left space-y-5">
+        <button @click="activeForm='login'" class="flex items-center gap-1.5 text-leaf-600 hover:text-leaf-800 text-sm font-medium transition-colors">← লগইনে ফিরুন</button>
+        <h2 class="text-2xl font-black text-leaf-900 mb-1">পাসওয়ার্ড রিসেট</h2>
+        <p class="text-gray-400 text-sm">মোবাইল নম্বর দিন, OTP পাঠাবো।</p>
+
+        <div x-show="!forgotSent" class="space-y-4">
+          <div>
+            <label class="form-label">মোবাইল নম্বর *</label>
+            <input x-model="forgot.phone" type="tel" placeholder="০১XXXXXXXXX" class="form-input"/>
+          </div>
+          <button @click="sendForgotOtp()" class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base shadow-lg">
+            📱 OTP পাঠান
+          </button>
+        </div>
+
+        <div x-show="forgotSent" class="space-y-4 slide-left">
+          <div class="bg-leaf-50 rounded-xl p-4 flex items-center gap-3">
+            <span class="text-2xl">📱</span>
+            <div>
+              <p class="font-semibold text-leaf-900 text-sm">OTP পাঠানো হয়েছে</p>
+              <p class="text-xs text-gray-400 mt-0.5" x-text="forgot.phone + ' নম্বরে'"></p>
+            </div>
+          </div>
+
+          <div class="flex gap-2 justify-center">
+            <template x-for="(digit, idx) in forgotOtp" :key="idx">
+              <input :value="digit" @input="handleForgotOtp($event, idx)"
+                     @keydown.backspace="handleForgotOtpBack($event, idx)"
+                     type="text" maxlength="1" inputmode="numeric"
+                     :class="digit?'filled':''" class="otp-input"/>
+            </template>
+          </div>
+
+          <div>
+            <label class="form-label">নতুন পাসওয়ার্ড *</label>
+            <input x-model="forgot.newPw" type="password" placeholder="নতুন পাসওয়ার্ড" class="form-input"/>
+          </div>
+          <div>
+            <label class="form-label">পাসওয়ার্ড নিশ্চিত করুন *</label>
+            <input x-model="forgot.confirmPw" type="password" placeholder="আবার লিখুন" class="form-input"/>
+          </div>
+
+          <button @click="resetPw()" class="submit-btn w-full py-4 rounded-2xl text-white font-black text-base shadow-lg">
+            🔒 পাসওয়ার্ড রিসেট করুন
+          </button>
+
+          <div x-show="forgotDone" x-transition class="bg-leaf-50 border border-leaf-300 rounded-xl p-4 text-center pop-in">
+            <div class="text-3xl mb-2">✅</div>
+            <p class="font-bold text-leaf-900 text-sm">পাসওয়ার্ড পরিবর্তন হয়েছে!</p>
+            <button @click="activeForm='login';forgotSent=false;forgotDone=false" class="mt-2 text-xs text-leaf-600 hover:underline font-semibold">লগইন করুন</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom note -->
+      <p class="text-center text-xs text-gray-400 mt-6">
+        এই প্ল্যাটফর্ম ব্যবহার করে আপনি আমাদের
+        <a href="terms.html" class="text-leaf-600 hover:underline">শর্তাবলী</a> মেনে নিচ্ছেন।
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+function authApp() {
+  return {
+    activeForm: 'login',
+    loginType: 'phone',
+    showLoginPw: false,
+    showRegPw: false,
+    showOtp: false,
+    loginLoading: false,
+    loginError: '',
+    login: { identifier:'', password:'', remember:false },
+    loginErrors: {},
+
+    otp: ['','','','','',''],
+    regOtp: ['','','','','',''],
+    forgotOtp: ['','','','','',''],
+    resendTimer: 30,
+    resendInterval: null,
+    otpSuccess: false,
+    otpError: false,
+
+    regStep: 0,
+    regSteps: ['তথ্য','পাসওয়ার্ড','যাচাই'],
+    regLoading: false,
+    regSuccess: false,
+    reg: { name:'', phone:'', email:'', password:'', confirm:'', agreed:false },
+    regErrors: {},
+    pwStrength: 0,
+    strengthColor: '#9ca3af',
+    strengthLabel: '',
+
+    pwTips: [
+      { label:'কমপক্ষে ৮ অক্ষর',         check: p => p.length >= 8 },
+      { label:'বড় হাতের অক্ষর আছে (A-Z)', check: p => /[A-Z]/.test(p) },
+      { label:'ছোট হাতের অক্ষর আছে (a-z)', check: p => /[a-z]/.test(p) },
+      { label:'সংখ্যা আছে (0-9)',           check: p => /\d/.test(p) },
+      { label:'বিশেষ চিহ্ন আছে (!@#$)',    check: p => /[^A-Za-z0-9]/.test(p) },
+    ],
+
+    forgot: { phone:'', newPw:'', confirmPw:'' },
+    forgotSent: false,
+    forgotDone: false,
+
+    features: [
+      { icon:'🛒', text:'৫০০+ কৃষি পণ্যের বিশাল সংগ্রহ' },
+      { icon:'🚚', text:'৬৪ জেলায় দ্রুত ডেলিভারি' },
+      { icon:'🎁', text:'লয়্যালটি পয়েন্টে বিশেষ ছাড়' },
+      { icon:'🌿', text:'১০০% খাঁটি ও বিষমুক্ত পণ্য' },
+      { icon:'↩️', text:'৭ দিনের রিটার্ন গ্যারান্টি' },
+    ],
+
+    resetForms() {
+      this.loginErrors = {}; this.regErrors = {}; this.loginError = '';
+      this.regStep = 0; this.showOtp = false; this.otp = ['','','','','',''];
+      this.regOtp = ['','','','','',''];
+    },
+
+    doLogin() {
+      this.loginErrors = {};
+      if (!this.login.identifier) { this.loginErrors.identifier = 'নম্বর বা ইমেইল দিন'; return; }
+      if (this.loginType === 'password' && !this.login.password) { this.loginErrors.password = 'পাসওয়ার্ড দিন'; return; }
+      if (this.loginType === 'password') {
+        this.loginLoading = true;
+        setTimeout(() => {
+          this.loginLoading = false;
+          if (this.login.password === 'wrong') { this.loginError = 'পাসওয়ার্ড ভুল! আবার চেষ্টা করুন।'; return; }
+          window.location.href = 'my-account.html';
+        }, 1500);
+      } else {
+        this.showOtp = true;
+        this.startResend();
+      }
+    },
+
+    handleOtp(e, idx) {
+      const v = e.target.value.replace(/\D/,'');
+      this.otp[idx] = v;
+      if (v && idx < 5) { e.target.parentElement.children[idx+1]?.focus(); }
+    },
+    handleOtpBack(e, idx) {
+      if (!this.otp[idx] && idx > 0) { this.otp[idx-1]=''; e.target.parentElement.children[idx-1]?.focus(); }
+    },
+
+    verifyOtp() {
+      const code = this.otp.join('');
+      if (code === '123456') {
+        this.otpSuccess = true; this.otpError = false;
+        setTimeout(() => window.location.href = 'my-account.html', 1500);
+      } else { this.otpError = true; setTimeout(()=>this.otpError=false,2000); }
+    },
+
+    startResend() {
+      this.resendTimer = 30;
+      clearInterval(this.resendInterval);
+      this.resendInterval = setInterval(() => {
+        if (this.resendTimer > 0) this.resendTimer--;
+        else clearInterval(this.resendInterval);
+      }, 1000);
+    },
+
+    validateReg1() {
+      this.regErrors = {};
+      if (!this.reg.name.trim()) { this.regErrors.name = 'নাম আবশ্যক'; return; }
+      if (!this.reg.phone.match(/^01[3-9]\d{8}$/)) { this.regErrors.phone = 'সঠিক মোবাইল নম্বর দিন'; return; }
+      this.regStep = 1;
+    },
+
+    validateReg2() {
+      this.regErrors = {};
+      if (this.reg.password.length < 8) { this.regErrors.password = 'কমপক্ষে ৮ অক্ষর দিন'; return; }
+      if (this.reg.password !== this.reg.confirm) { this.regErrors.confirm = 'পাসওয়ার্ড মিলছে না'; return; }
+      this.regStep = 2;
+    },
+
+    handleRegOtp(e, idx) {
+      const v = e.target.value.replace(/\D/,'');
+      this.regOtp[idx] = v;
+      if (v && idx < 5) { e.target.parentElement.children[idx+1]?.focus(); }
+    },
+    handleRegOtpBack(e, idx) {
+      if (!this.regOtp[idx] && idx > 0) { this.regOtp[idx-1]=''; e.target.parentElement.children[idx-1]?.focus(); }
+    },
+
+    completeReg() {
+      this.regErrors = {};
+      const code = this.regOtp.join('');
+      if (code !== '123456') { this.regErrors.otp = 'ভুল OTP'; return; }
+      if (!this.reg.agreed) { this.regErrors.agreed = 'শর্তাবলীতে সম্মত হন'; return; }
+      this.regLoading = true;
+      setTimeout(() => { this.regLoading = false; this.regSuccess = true; }, 1800);
+    },
+
+    calcStrength() {
+      const p = this.reg.password; let s = 0;
+      if (p.length >= 8) s++;
+      if (/[A-Z]/.test(p)) s++;
+      if (/[a-z]/.test(p)) s++;
+      if (/\d/.test(p)) s++;
+      if (/[^A-Za-z0-9]/.test(p)) s++;
+      this.pwStrength = s;
+      if (s <= 1) { this.strengthColor='#ef4444'; this.strengthLabel='খুব দুর্বল'; }
+      else if (s === 2) { this.strengthColor='#f59e0b'; this.strengthLabel='দুর্বল'; }
+      else if (s === 3) { this.strengthColor='#3b82f6'; this.strengthLabel='মোটামুটি'; }
+      else if (s === 4) { this.strengthColor='#1e7e1e'; this.strengthLabel='শক্তিশালী'; }
+      else { this.strengthColor='#166116'; this.strengthLabel='অতি শক্তিশালী ✓'; }
+    },
+
+    sendForgotOtp() {
+      if (!this.forgot.phone) return;
+      this.forgotSent = true;
+    },
+
+    handleForgotOtp(e, idx) {
+      const v = e.target.value.replace(/\D/,'');
+      this.forgotOtp[idx] = v;
+      if (v && idx < 5) { e.target.parentElement.children[idx+1]?.focus(); }
+    },
+    handleForgotOtpBack(e, idx) {
+      if (!this.forgotOtp[idx] && idx > 0) { this.forgotOtp[idx-1]=''; e.target.parentElement.children[idx-1]?.focus(); }
+    },
+
+    resetPw() {
+      const code = this.forgotOtp.join('');
+      if (code === '123456' && this.forgot.newPw && this.forgot.newPw === this.forgot.confirmPw) {
+        this.forgotDone = true;
+      }
+    },
+  }
+}
+</script>
+</body>
+</html>

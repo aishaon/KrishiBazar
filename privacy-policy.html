@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="{ mobileMenu: false, scrolled: false }"
+      @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>গোপনীয়তা নীতি — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: { serif: ['Noto Serif Bengali','serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3,h4{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; }
+    .nav-glass{ backdrop-filter:blur(16px); }
+    .section-divider{ width:56px;height:4px;background:linear-gradient(90deg,#2e9c2e,#b8692a);border-radius:2px; }
+
+    .privacy-hero{
+      background:linear-gradient(140deg,#0a300a 0%,#1e7e1e 55%,#4ab94a 100%);
+      position:relative; overflow:hidden;
+    }
+    .privacy-hero::before{
+      content:''; position:absolute; inset:0;
+      background:url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h26v26H0zm26 26h26v26H26z' fill='%23fff' fill-opacity='.02'/%3E%3C/svg%3E");
+    }
+
+    /* Policy sections */
+    .policy-section{
+      background:white; border-radius:24px;
+      border:1.5px solid #f0faf0; padding:30px;
+      scroll-margin-top:160px;
+      transition:box-shadow .3s ease;
+    }
+    .policy-section:hover{ box-shadow:0 8px 32px rgba(0,0,0,.07); }
+    .policy-section h2{
+      font-size:1.35rem; font-weight:900; color:#0a300a;
+      display:flex; align-items:center; gap:10px;
+      padding-bottom:14px; margin-bottom:18px;
+      border-bottom:2px solid #f0faf0;
+    }
+    .policy-section h3{ font-size:1rem; font-weight:700; color:#166116; margin:16px 0 8px; }
+    .policy-section p{ color:#4b5563; font-size:.93rem; line-height:1.9; margin-bottom:12px; }
+    .policy-section ul{ margin-bottom:14px; }
+    .policy-section ul li{
+      color:#4b5563; font-size:.93rem; line-height:1.85;
+      padding:3px 0 3px 24px; position:relative;
+    }
+    .policy-section ul li::before{ content:'›'; position:absolute; left:0; color:#1e7e1e; font-weight:900; }
+
+    /* Info boxes */
+    .info-box{ border-radius:16px; padding:16px 20px; border-left:4px solid; margin:14px 0; }
+    .info-box.green{ background:#f0faf0; border-color:#1e7e1e; }
+    .info-box.blue { background:#eff6ff; border-color:#3b82f6; }
+    .info-box.yellow{ background:#fffbeb; border-color:#f59e0b; }
+    .info-box.red  { background:#fff5f5; border-color:#ef4444; }
+
+    /* Data table */
+    table{ width:100%; border-collapse:collapse; font-size:.88rem; margin:12px 0; }
+    th{ background:#1e7e1e; color:white; padding:10px 14px; text-align:left; font-weight:700; }
+    th:first-child{ border-radius:10px 0 0 10px; }
+    th:last-child { border-radius:0 10px 10px 0; }
+    td{ padding:10px 14px; color:#4b5563; border-bottom:1px solid #f0faf0; }
+    tr:last-child td{ border:none; }
+    tr:nth-child(even) td{ background:#f9fffe; }
+
+    /* TOC sidebar */
+    .toc-link{
+      display:flex; align-items:center; gap:8px;
+      padding:7px 10px; border-radius:10px; font-size:12.5px;
+      color:#6b7280; text-decoration:none; transition:all .2s;
+    }
+    .toc-link:hover{ background:#f0faf0; color:#1e7e1e; }
+    .toc-link.active{ background:#f0faf0; color:#1e7e1e; font-weight:700; border-left:3px solid #1e7e1e; }
+
+    /* Rights card */
+    .right-card{
+      background:white; border-radius:16px; border:1.5px solid #f0faf0;
+      padding:16px; transition:all .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .right-card:hover{ border-color:#74d474; transform:translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,.08); }
+
+    .marquee-track{ display:flex; animation:marquee 28s linear infinite; white-space:nowrap; }
+    @keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes fadeUp{ from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up{ animation:fadeUp .5s ease forwards; }
+
+    .version-badge{ background:linear-gradient(135deg,#1e7e1e,#4ab94a); color:white; border-radius:99px; padding:3px 12px; font-size:11px; font-weight:700; }
+  </style>
+</head>
+<body class="overflow-x-hidden">
+
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div class="bg-leaf-800 text-white text-xs py-2 overflow-hidden">
+  <div class="marquee-track gap-12">
+    <span class="px-8">🔒 আপনার তথ্য সম্পূর্ণ সুরক্ষিত</span>
+    <span class="px-8">🌿 কৃষি বাজার গোপনীয়তা নীতি</span>
+    <span class="px-8">📞 প্রশ্ন থাকলে: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">✉️ privacy@krishibazar.com.bd</span>
+    <span class="px-8">🔒 আপনার তথ্য সম্পূর্ণ সুরক্ষিত</span>
+    <span class="px-8">🌿 কৃষি বাজার গোপনীয়তা নীতি</span>
+    <span class="px-8">📞 প্রশ্ন থাকলে: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">✉️ privacy@krishibazar.com.bd</span>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav :class="scrolled?'bg-white/95 shadow-md nav-glass':'bg-white'"
+     class="sticky top-0 z-50 border-b border-leaf-100 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 gap-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow"><span class="text-xl">🌿</span></div>
+        <div class="hidden sm:block">
+          <div class="font-serif font-bold text-leaf-800 text-lg leading-none">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+      <div class="flex items-center gap-2 ml-auto">
+        <button @click="window.print()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-leaf-200 text-leaf-700 text-sm font-medium hover:bg-leaf-50 transition-colors">🖨️ প্রিন্ট</button>
+        <a href="cart.html" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+          <span class="text-xl">🛒</span>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">৩</span>
+        </a>
+        <button @click="mobileMenu=!mobileMenu" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-leaf-50">
+          <svg class="w-5 h-5 text-leaf-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center gap-1 pb-2 text-sm font-medium border-t border-leaf-50 pt-2">
+      <a href="index.html"          class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🏠 হোম</a>
+      <a href="shop.html"           class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🛒 শপ</a>
+      <a href="contact.html"        class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📞 যোগাযোগ</a>
+      <a href="terms.html"          class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📄 শর্তাবলী</a>
+      <a href="refund-policy.html"  class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">↩️ রিফান্ড</a>
+      <a href="privacy-policy.html" class="px-3 py-1 rounded-lg bg-leaf-600 text-white">🔒 গোপনীয়তা</a>
+    </div>
+    <div x-show="mobileMenu" x-transition class="md:hidden border-t border-leaf-100 py-3 grid grid-cols-2 gap-1">
+      <a href="index.html"          class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">🏠 হোম</a>
+      <a href="shop.html"           class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">🛒 শপ</a>
+      <a href="terms.html"          class="px-3 py-2 rounded-lg hover:bg-leaf-50 text-sm">📄 শর্তাবলী</a>
+      <a href="privacy-policy.html" class="px-3 py-2 rounded-lg bg-leaf-50 text-leaf-700 text-sm font-semibold">🔒 গোপনীয়তা</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ BREADCRUMB ══ -->
+<div class="bg-white border-b border-leaf-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-xs text-gray-400">
+    <a href="index.html" class="hover:text-leaf-600">হোম</a><span>›</span>
+    <span class="text-leaf-700 font-medium">গোপনীয়তা নীতি</span>
+  </div>
+</div>
+
+<!-- ══ HERO ══ -->
+<section class="privacy-hero py-14 relative">
+  <div class="absolute top-6 left-8 text-6xl opacity-10 animate-bounce" style="animation-duration:5s">🔒</div>
+  <div class="absolute bottom-12 right-10 text-5xl opacity-10 animate-bounce" style="animation-duration:7s">🛡️</div>
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center relative z-10">
+    <div class="flex items-center justify-center gap-3 mb-5">
+      <div class="inline-flex items-center gap-2 bg-white/15 border border-white/25 text-white/90 text-xs px-4 py-1.5 rounded-full">
+        <span>📅</span> সর্বশেষ আপডেট: ১ জানুয়ারি, ২০২৬
+      </div>
+      <span class="version-badge">v১.২</span>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-black text-white leading-tight mb-4">
+      গোপনীয়তা <span class="text-yellow-300">নীতি</span>
+    </h1>
+    <p class="text-white/70 text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-8">
+      আপনার ব্যক্তিগত তথ্য কীভাবে সংগ্রহ, ব্যবহার ও সুরক্ষিত রাখা হয় — সব কিছু স্বচ্ছভাবে জানুন।
+    </p>
+    <!-- Key promises -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto">
+      <div class="bg-white/15 backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center">
+        <div class="text-xl mb-1">🔒</div><div class="text-white text-xs font-semibold">SSL সুরক্ষিত</div>
+      </div>
+      <div class="bg-white/15 backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center">
+        <div class="text-xl mb-1">🚫</div><div class="text-white text-xs font-semibold">তথ্য বিক্রি নয়</div>
+      </div>
+      <div class="bg-white/15 backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center">
+        <div class="text-xl mb-1">👁️</div><div class="text-white text-xs font-semibold">স্বচ্ছতা</div>
+      </div>
+      <div class="bg-white/15 backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center">
+        <div class="text-xl mb-1">✅</div><div class="text-white text-xs font-semibold">আপনার নিয়ন্ত্রণ</div>
+      </div>
+    </div>
+  </div>
+  <svg class="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,40 C360,0 1080,70 1440,20 L1440,60 L0,60Z" fill="#fdf6e3"/>
+  </svg>
+</section>
+
+<!-- ══ MAIN ══ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+  <div class="flex gap-10">
+
+    <!-- ── Content ── -->
+    <div class="flex-1 min-w-0 space-y-6">
+
+      <!-- Summary pledge -->
+      <div class="bg-gradient-to-br from-leaf-700 to-leaf-900 rounded-3xl p-6 md:p-8 text-white fade-up">
+        <div class="flex items-start gap-4">
+          <div class="text-4xl shrink-0">🛡️</div>
+          <div>
+            <h2 class="text-xl font-black mb-3">আমাদের গোপনীয়তা প্রতিশ্রুতি</h2>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div class="bg-white/10 rounded-xl p-3">
+                <div class="font-bold text-sm mb-1.5">✅ আমরা যা করি</div>
+                <ul class="text-white/70 text-xs space-y-1">
+                  <li>› শুধু প্রয়োজনীয় তথ্য সংগ্রহ</li>
+                  <li>› SSL এনক্রিপশনে তথ্য সুরক্ষা</li>
+                  <li>› তথ্য ব্যবহারে স্বচ্ছতা</li>
+                  <li>› আপনার অনুরোধে তথ্য মুছে ফেলা</li>
+                </ul>
+              </div>
+              <div class="bg-white/10 rounded-xl p-3">
+                <div class="font-bold text-sm mb-1.5">🚫 আমরা যা করি না</div>
+                <ul class="text-white/70 text-xs space-y-1">
+                  <li>› তৃতীয় পক্ষের কাছে তথ্য বিক্রি</li>
+                  <li>› অনুমতি ছাড়া মার্কেটিং</li>
+                  <li>› অপ্রয়োজনীয় তথ্য সংগ্রহ</li>
+                  <li>› শিশুদের তথ্য সংগ্রহ</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. ভূমিকা -->
+      <div id="intro" class="policy-section fade-up" style="animation-delay:.05s">
+        <h2><span class="text-3xl">📖</span> ভূমিকা</h2>
+        <p>কৃষি বাজার (krishibazar.com.bd) আপনার গোপনীয়তাকে সর্বোচ্চ গুরুত্ব দেয়। এই গোপনীয়তা নীতি ব্যাখ্যা করে যে আমরা কীভাবে আপনার ব্যক্তিগত তথ্য সংগ্রহ, ব্যবহার, সংরক্ষণ ও সুরক্ষিত রাখি।</p>
+        <p>আমাদের ওয়েবসাইট বা মোবাইল অ্যাপ ব্যবহার করে আপনি এই নীতিতে সম্মতি জানাচ্ছেন। অনুগ্রহ করে মনোযোগ দিয়ে পড়ুন।</p>
+        <div class="info-box blue">
+          <p class="text-blue-800 text-sm">ℹ️ এই নীতি বাংলাদেশের <strong>ডিজিটাল নিরাপত্তা আইন, ২০১৮</strong> এবং <strong>তথ্য ও যোগাযোগ প্রযুক্তি আইন, ২০০৬</strong> অনুযায়ী প্রণীত।</p>
+        </div>
+      </div>
+
+      <!-- 2. তথ্য সংগ্রহ -->
+      <div id="collection" class="policy-section fade-up" style="animation-delay:.08s">
+        <h2><span class="text-3xl">📋</span> আমরা কী তথ্য সংগ্রহ করি</h2>
+
+        <h3>ক) আপনি সরাসরি যা দেন</h3>
+        <ul>
+          <li>নাম, মোবাইল নম্বর ও ইমেইল ঠিকানা</li>
+          <li>ডেলিভারির ঠিকানা ও যোগাযোগের তথ্য</li>
+          <li>পেমেন্ট সংক্রান্ত তথ্য (কার্ড নম্বর সংরক্ষণ করা হয় না)</li>
+          <li>প্রোফাইল ছবি ও পছন্দ সম্পর্কিত তথ্য</li>
+          <li>রিভিউ, মন্তব্য ও যোগাযোগের বার্তা</li>
+        </ul>
+
+        <h3>খ) স্বয়ংক্রিয়ভাবে সংগৃহীত তথ্য</h3>
+        <ul>
+          <li>আইপি ঠিকানা ও ব্রাউজারের ধরন</li>
+          <li>ডিভাইসের তথ্য (অপারেটিং সিস্টেম, স্ক্রিন রেজোলিউশন)</li>
+          <li>ওয়েবসাইটে কোন পেজ কতক্ষণ দেখলেন</li>
+          <li>কোথা থেকে আমাদের সাইটে এলেন (রেফারেল)</li>
+          <li>কুকিজ ও অনুরূপ ট্র্যাকিং প্রযুক্তি</li>
+        </ul>
+
+        <h3>গ) তৃতীয় পক্ষ থেকে</h3>
+        <ul>
+          <li>Google বা Facebook লগইন ব্যবহার করলে প্রোফাইল তথ্য</li>
+          <li>পেমেন্ট গেটওয়ে থেকে লেনদেনের নিশ্চিতকরণ</li>
+          <li>ডেলিভারি অ্যাপ থেকে লোকেশন আপডেট</li>
+        </ul>
+
+        <div class="info-box green">
+          <p class="text-leaf-800 text-sm">✅ <strong>আমরা কখনো সংগ্রহ করি না:</strong> জাতীয় পরিচয়পত্র নম্বর, পাসপোর্ট তথ্য, ব্যাংক পিন বা পাসওয়ার্ড, ১৮ বছরের কম বয়সীদের তথ্য।</p>
+        </div>
+      </div>
+
+      <!-- 3. তথ্য ব্যবহার -->
+      <div id="usage" class="policy-section fade-up" style="animation-delay:.1s">
+        <h2><span class="text-3xl">⚙️</span> তথ্য কীভাবে ব্যবহার করা হয়</h2>
+
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th>উদ্দেশ্য</th><th>ব্যবহৃত তথ্য</th><th>আইনি ভিত্তি</th></tr></thead>
+            <tbody>
+              <tr><td>অর্ডার প্রক্রিয়াকরণ ও ডেলিভারি</td><td>নাম, ঠিকানা, ফোন</td><td>চুক্তি পালন</td></tr>
+              <tr><td>পেমেন্ট প্রক্রিয়াকরণ</td><td>পেমেন্ট তথ্য</td><td>চুক্তি পালন</td></tr>
+              <tr><td>গ্রাহক সেবা প্রদান</td><td>যোগাযোগ তথ্য</td><td>ন্যায্য স্বার্থ</td></tr>
+              <tr><td>পণ্য সুপারিশ ব্যক্তিগতকরণ</td><td>ব্রাউজিং ইতিহাস</td><td>সম্মতি</td></tr>
+              <tr><td>মার্কেটিং বার্তা পাঠানো</td><td>ইমেইল, ফোন</td><td>সম্মতি</td></tr>
+              <tr><td>প্ল্যাটফর্মের নিরাপত্তা</td><td>আইপি, ডিভাইস তথ্য</td><td>ন্যায্য স্বার্থ</td></tr>
+              <tr><td>আইনি বাধ্যবাধকতা পালন</td><td>প্রযোজ্য তথ্য</td><td>আইনি বাধ্যবাধকতা</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4. তথ্য ভাগাভাগি -->
+      <div id="sharing" class="policy-section fade-up" style="animation-delay:.12s">
+        <h2><span class="text-3xl">🤝</span> তথ্য কার সাথে শেয়ার করা হয়</h2>
+        <p>আমরা আপনার তথ্য <strong>কখনো বিক্রি করি না।</strong> নিচের সীমিত পরিস্থিতিতে শুধুমাত্র প্রয়োজনীয় তথ্য শেয়ার করা হয়:</p>
+
+        <div class="grid sm:grid-cols-2 gap-4 mt-4">
+          <div class="info-box green">
+            <h4 class="font-bold text-leaf-900 text-sm mb-2">🚚 ডেলিভারি পার্টনার</h4>
+            <p class="text-sm text-gray-600 mb-0">নাম, ফোন ও ডেলিভারি ঠিকানা — শুধু পণ্য পৌঁছে দেওয়ার জন্য।</p>
+          </div>
+          <div class="info-box blue">
+            <h4 class="font-bold text-blue-900 text-sm mb-2">💳 পেমেন্ট গেটওয়ে</h4>
+            <p class="text-sm text-gray-600 mb-0">পেমেন্ট নিশ্চিত করতে bKash, Nagad, SSLCOMMERZ-কে প্রয়োজনীয় তথ্য।</p>
+          </div>
+          <div class="info-box yellow">
+            <h4 class="font-bold text-yellow-900 text-sm mb-2">⚖️ আইনি কর্তৃপক্ষ</h4>
+            <p class="text-sm text-gray-600 mb-0">আদালতের আদেশ বা সরকারি নির্দেশে — শুধুমাত্র বাধ্য হলে।</p>
+          </div>
+          <div class="info-box green">
+            <h4 class="font-bold text-leaf-900 text-sm mb-2">🔧 প্রযুক্তি সেবাদাতা</h4>
+            <p class="text-sm text-gray-600 mb-0">হোস্টিং, ইমেইল সার্ভিস — কঠোর গোপনীয়তা চুক্তির আওতায়।</p>
+          </div>
+        </div>
+
+        <div class="info-box red mt-4">
+          <p class="text-red-800 text-sm">🚫 <strong>আমরা কখনো শেয়ার করি না:</strong> বিজ্ঞাপনদাতা, ডেটা ব্রোকার বা অন্য যেকোনো তৃতীয় পক্ষের কাছে বিপণনের উদ্দেশ্যে।</p>
+        </div>
+      </div>
+
+      <!-- 5. কুকিজ -->
+      <div id="cookies" class="policy-section fade-up" style="animation-delay:.14s">
+        <h2><span class="text-3xl">🍪</span> কুকিজ ও ট্র্যাকিং</h2>
+        <p>আমরা ওয়েবসাইটের কার্যকারিতা উন্নত করতে কুকিজ ব্যবহার করি।</p>
+
+        <h3>কুকিজের ধরন</h3>
+        <div class="space-y-3 mt-2">
+          <div class="flex gap-3 p-3 bg-leaf-50 rounded-xl">
+            <div class="w-8 h-8 bg-leaf-600 text-white rounded-lg flex items-center justify-center text-sm shrink-0 font-bold">✓</div>
+            <div>
+              <div class="font-bold text-leaf-900 text-sm">প্রয়োজনীয় কুকিজ</div>
+              <div class="text-xs text-gray-500 mt-0.5">লগইন সেশন, কার্ট তথ্য — এগুলো ছাড়া সাইট কাজ করে না।</div>
+            </div>
+          </div>
+          <div class="flex gap-3 p-3 bg-blue-50 rounded-xl">
+            <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center text-sm shrink-0 font-bold">📊</div>
+            <div>
+              <div class="font-bold text-blue-900 text-sm">বিশ্লেষণ কুকিজ</div>
+              <div class="text-xs text-gray-500 mt-0.5">Google Analytics — কত মানুষ কোন পেজ দেখছেন তা জানতে।</div>
+            </div>
+          </div>
+          <div class="flex gap-3 p-3 bg-yellow-50 rounded-xl">
+            <div class="w-8 h-8 bg-yellow-500 text-white rounded-lg flex items-center justify-center text-sm shrink-0 font-bold">🎯</div>
+            <div>
+              <div class="font-bold text-yellow-900 text-sm">মার্কেটিং কুকিজ</div>
+              <div class="text-xs text-gray-500 mt-0.5">প্রাসঙ্গিক বিজ্ঞাপন দেখাতে — আপনি বন্ধ করতে পারবেন।</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box blue mt-4">
+          <p class="text-blue-800 text-sm">💡 ব্রাউজার সেটিংস থেকে কুকিজ নিয়ন্ত্রণ করা যাবে। তবে প্রয়োজনীয় কুকিজ বন্ধ করলে কিছু ফিচার কাজ করবে না।</p>
+        </div>
+      </div>
+
+      <!-- 6. তথ্য সুরক্ষা -->
+      <div id="security" class="policy-section fade-up" style="animation-delay:.16s">
+        <h2><span class="text-3xl">🔐</span> তথ্য সুরক্ষা ব্যবস্থা</h2>
+        <p>আপনার তথ্য সুরক্ষায় আমরা শিল্পমানের নিরাপত্তা ব্যবস্থা গ্রহণ করেছি:</p>
+
+        <div class="grid sm:grid-cols-3 gap-4 mt-4">
+          <div class="text-center p-4 bg-leaf-50 rounded-2xl border border-leaf-100">
+            <div class="text-3xl mb-2">🔒</div>
+            <div class="font-bold text-leaf-900 text-sm">SSL/TLS এনক্রিপশন</div>
+            <div class="text-xs text-gray-500 mt-1">সকল তথ্য ট্রান্সমিশন এনক্রিপ্টেড</div>
+          </div>
+          <div class="text-center p-4 bg-blue-50 rounded-2xl border border-blue-100">
+            <div class="text-3xl mb-2">🛡️</div>
+            <div class="font-bold text-blue-900 text-sm">ফায়ারওয়াল সুরক্ষা</div>
+            <div class="text-xs text-gray-500 mt-1">অননুমোদিত প্রবেশ রোধ করা হয়</div>
+          </div>
+          <div class="text-center p-4 bg-purple-50 rounded-2xl border border-purple-100">
+            <div class="text-3xl mb-2">🔑</div>
+            <div class="font-bold text-purple-900 text-sm">সীমিত অ্যাক্সেস</div>
+            <div class="text-xs text-gray-500 mt-1">শুধু প্রয়োজনীয় কর্মীদের অ্যাক্সেস</div>
+          </div>
+        </div>
+
+        <div class="info-box yellow mt-4">
+          <p class="text-yellow-800 text-sm">⚠️ ইন্টারনেটে কোনো সিস্টেমই ১০০% নিরাপদ নয়। নিরাপত্তা লঙ্ঘনের ঘটনায় আমরা ৭২ ঘণ্টার মধ্যে প্রভাবিত ব্যবহারকারীদের জানাবো।</p>
+        </div>
+      </div>
+
+      <!-- 7. তথ্য সংরক্ষণ মেয়াদ -->
+      <div id="retention" class="policy-section fade-up" style="animation-delay:.18s">
+        <h2><span class="text-3xl">⏳</span> তথ্য সংরক্ষণের মেয়াদ</h2>
+        <p>আমরা প্রয়োজনের বেশি সময় তথ্য সংরক্ষণ করি না:</p>
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th>তথ্যের ধরন</th><th>সংরক্ষণ কাল</th><th>কারণ</th></tr></thead>
+            <tbody>
+              <tr><td>অ্যাকাউন্ট তথ্য</td><td>অ্যাকাউন্ট বন্ধের পর ৩০ দিন</td><td>পুনরুদ্ধারের সুযোগ</td></tr>
+              <tr><td>অর্ডার ইতিহাস</td><td>৫ বছর</td><td>আইনি প্রয়োজন</td></tr>
+              <tr><td>পেমেন্ট রেকর্ড</td><td>৭ বছর</td><td>আর্থিক বিধিমালা</td></tr>
+              <tr><td>ব্রাউজিং লগ</td><td>৯০ দিন</td><td>নিরাপত্তা পর্যবেক্ষণ</td></tr>
+              <tr><td>মার্কেটিং সম্মতি</td><td>সম্মতি প্রত্যাহার পর্যন্ত</td><td>আইনি প্রমাণ</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 8. আপনার অধিকার -->
+      <div id="rights" class="policy-section fade-up" style="animation-delay:.2s">
+        <h2><span class="text-3xl">⚖️</span> আপনার অধিকার</h2>
+        <p>আপনার ব্যক্তিগত তথ্যের উপর আপনার নিম্নলিখিত অধিকার রয়েছে:</p>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          <div class="right-card">
+            <div class="text-2xl mb-2">👁️</div>
+            <h4 class="font-bold text-leaf-900 text-sm mb-1">দেখার অধিকার</h4>
+            <p class="text-xs text-gray-500 leading-relaxed">আমরা আপনার সম্পর্কে কী তথ্য রেখেছি তা জানতে পারবেন।</p>
+          </div>
+          <div class="right-card">
+            <div class="text-2xl mb-2">✏️</div>
+            <h4 class="font-bold text-leaf-900 text-sm mb-1">সংশোধনের অধিকার</h4>
+            <p class="text-xs text-gray-500 leading-relaxed">ভুল বা পুরনো তথ্য সংশোধন করতে পারবেন।</p>
+          </div>
+          <div class="right-card">
+            <div class="text-2xl mb-2">🗑️</div>
+            <h4 class="font-bold text-leaf-900 text-sm mb-1">মুছে ফেলার অধিকার</h4>
+            <p class="text-xs text-gray-500 leading-relaxed">নির্দিষ্ট শর্তে আপনার তথ্য মুছে দেওয়ার অনুরোধ করতে পারবেন।</p>
+          </div>
+          <div class="right-card">
+            <div class="text-2xl mb-2">🚫</div>
+            <h4 class="font-bold text-leaf-900 text-sm mb-1">আপত্তির অধিকার</h4>
+            <p class="text-xs text-gray-500 leading-relaxed">মার্কেটিং বা প্রোফাইলিংয়ে আপত্তি করতে পারবেন।</p>
+          </div>
+          <div class="right-card">
+            <div class="text-2xl mb-2">📦</div>
+            <h4 class="font-bold text-leaf-900 text-sm mb-1">বহনযোগ্যতার অধিকার</h4>
+            <p class="text-xs text-gray-500 leading-relaxed">আপনার তথ্যের কপি ডাউনলোড করতে পারবেন।</p>
+          </div>
+          <div class="right-card">
+            <div class="text-2xl mb-2">⏸️</div>
+            <h4 class="font-bold text-leaf-900 text-sm mb-1">সীমাবদ্ধতার অধিকার</h4>
+            <p class="text-xs text-gray-500 leading-relaxed">নির্দিষ্ট ক্ষেত্রে তথ্য প্রক্রিয়াকরণ সীমিত করতে পারবেন।</p>
+          </div>
+        </div>
+
+        <div class="mt-5 bg-leaf-50 rounded-2xl p-5 border border-leaf-100">
+          <h4 class="font-bold text-leaf-900 mb-3">অধিকার প্রয়োগ করতে যোগাযোগ করুন:</h4>
+          <div class="flex flex-wrap gap-3">
+            <a href="mailto:privacy@krishibazar.com.bd" class="flex items-center gap-2 bg-white border border-leaf-200 text-leaf-700 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-leaf-50 transition-colors">
+              ✉️ privacy@krishibazar.com.bd
+            </a>
+            <a href="tel:01908597470" class="flex items-center gap-2 bg-white border border-leaf-200 text-leaf-700 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-leaf-50 transition-colors">
+              📞 ০১৯০৮-৫৯৭৪৭০
+            </a>
+          </div>
+          <p class="text-xs text-gray-400 mt-2">আমরা আপনার অনুরোধে ৩০ দিনের মধ্যে সাড়া দেব।</p>
+        </div>
+      </div>
+
+      <!-- 9. শিশুদের গোপনীয়তা -->
+      <div id="children" class="policy-section fade-up" style="animation-delay:.22s">
+        <h2><span class="text-3xl">👶</span> শিশুদের গোপনীয়তা</h2>
+        <p>কৃষি বাজার ইচ্ছাকৃতভাবে ১৮ বছরের কম বয়সী কারো তথ্য সংগ্রহ করে না। আমাদের সেবা শুধুমাত্র প্রাপ্তবয়স্কদের জন্য।</p>
+        <div class="info-box red">
+          <p class="text-red-800 text-sm">⚠️ যদি আপনি জানতে পারেন যে কোনো অপ্রাপ্তবয়স্ক আমাদের প্ল্যাটফর্মে নিবন্ধিত হয়েছে, অনুগ্রহ করে <strong>privacy@krishibazar.com.bd</strong>-এ জানান। আমরা তাৎক্ষণিক ব্যবস্থা নেব।</p>
+        </div>
+      </div>
+
+      <!-- 10. নীতি পরিবর্তন -->
+      <div id="changes" class="policy-section fade-up" style="animation-delay:.24s">
+        <h2><span class="text-3xl">🔄</span> নীতি পরিবর্তন</h2>
+        <p>আমরা এই গোপনীয়তা নীতি সময়ে সময়ে আপডেট করতে পারি। উল্লেখযোগ্য পরিবর্তনের ক্ষেত্রে:</p>
+        <ul>
+          <li>ওয়েবসাইটে বিজ্ঞপ্তি প্রকাশ করা হবে</li>
+          <li>নিবন্ধিত ব্যবহারকারীদের ইমেইল/SMS পাঠানো হবে</li>
+          <li>পরিবর্তনের তারিখ শীর্ষে উল্লেখ থাকবে</li>
+          <li>গুরুত্বপূর্ণ পরিবর্তনে ৩০ দিন আগে নোটিশ দেওয়া হবে</li>
+        </ul>
+      </div>
+
+      <!-- Version & Contact -->
+      <div class="bg-white rounded-2xl border border-leaf-100 p-6 text-center fade-up">
+        <div class="section-divider mx-auto mb-4"></div>
+        <p class="text-xs text-gray-400 mb-1">সর্বশেষ আপডেট:</p>
+        <p class="font-bold text-leaf-800 mb-3">১ জানুয়ারি, ২০২৬ | সংস্করণ ১.২</p>
+        <div class="flex justify-center gap-4 flex-wrap">
+          <a href="terms.html"         class="text-xs text-leaf-600 hover:underline">📄 শর্তাবলী</a>
+          <span class="text-gray-300">|</span>
+          <a href="refund-policy.html" class="text-xs text-leaf-600 hover:underline">↩️ রিফান্ড নীতি</a>
+          <span class="text-gray-300">|</span>
+          <a href="contact.html"       class="text-xs text-leaf-600 hover:underline">📞 যোগাযোগ</a>
+          <span class="text-gray-300">|</span>
+          <button @click="window.print()" class="text-xs text-leaf-600 hover:underline">🖨️ প্রিন্ট</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sidebar ── -->
+    <aside class="hidden lg:block w-60 shrink-0">
+      <div class="sticky top-[130px] space-y-5">
+
+        <!-- TOC -->
+        <div class="bg-white rounded-2xl border border-leaf-100 p-5">
+          <h3 class="font-bold text-leaf-900 text-sm mb-3">📑 বিষয়সূচি</h3>
+          <nav class="space-y-0.5">
+            <a href="#intro"      class="toc-link">📖 ভূমিকা</a>
+            <a href="#collection" class="toc-link">📋 তথ্য সংগ্রহ</a>
+            <a href="#usage"      class="toc-link">⚙️ তথ্য ব্যবহার</a>
+            <a href="#sharing"    class="toc-link">🤝 তথ্য শেয়ারিং</a>
+            <a href="#cookies"    class="toc-link">🍪 কুকিজ</a>
+            <a href="#security"   class="toc-link">🔐 তথ্য সুরক্ষা</a>
+            <a href="#retention"  class="toc-link">⏳ সংরক্ষণ মেয়াদ</a>
+            <a href="#rights"     class="toc-link">⚖️ আপনার অধিকার</a>
+            <a href="#children"   class="toc-link">👶 শিশুদের গোপনীয়তা</a>
+            <a href="#changes"    class="toc-link">🔄 নীতি পরিবর্তন</a>
+          </nav>
+        </div>
+
+        <!-- Quick contact -->
+        <div class="bg-white rounded-2xl border border-leaf-100 p-5">
+          <h3 class="font-bold text-leaf-900 text-sm mb-3">📬 গোপনীয়তা টিম</h3>
+          <div class="space-y-2">
+            <a href="mailto:privacy@krishibazar.com.bd" class="flex items-center gap-2 text-xs text-leaf-600 hover:text-leaf-800 transition-colors">
+              ✉️ privacy@krishibazar.com.bd
+            </a>
+            <a href="tel:01908597470" class="flex items-center gap-2 text-xs text-leaf-600 hover:text-leaf-800 transition-colors">
+              📞 ০১৯০৮-৫৯৭৪৭০
+            </a>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">৩০ দিনের মধ্যে সাড়া দেওয়া হবে।</p>
+        </div>
+
+        <!-- Related -->
+        <div class="bg-gradient-to-br from-leaf-700 to-leaf-900 rounded-2xl p-5 text-white">
+          <div class="text-3xl mb-3">🔗</div>
+          <h3 class="font-bold text-sm mb-3">সম্পর্কিত নীতি</h3>
+          <div class="space-y-2">
+            <a href="terms.html"         class="flex items-center gap-2 text-white/80 hover:text-white text-xs transition-colors">📄 শর্তাবলী</a>
+            <a href="refund-policy.html" class="flex items-center gap-2 text-white/80 hover:text-white text-xs transition-colors">↩️ রিফান্ড নীতি</a>
+            <a href="contact.html"       class="flex items-center gap-2 text-white/80 hover:text-white text-xs transition-colors">📞 যোগাযোগ</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- ══ FOOTER ══ -->
+<footer class="bg-leaf-900 text-white pt-10 pb-6 mt-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-xl">🌿</div>
+          <div class="font-serif font-bold">কৃষি বাজার</div>
+        </div>
+        <p class="text-white/40 text-xs leading-relaxed">২০১৭ সাল থেকে কৃষকদের পাশে।</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">পেজসমূহ</h4>
+        <ul class="space-y-1.5">
+          <li><a href="index.html"  class="text-white/45 text-xs hover:text-white transition-colors">হোম</a></li>
+          <li><a href="shop.html"   class="text-white/45 text-xs hover:text-white transition-colors">শপ</a></li>
+          <li><a href="blog.html"   class="text-white/45 text-xs hover:text-white transition-colors">ব্লগ</a></li>
+          <li><a href="about.html"  class="text-white/45 text-xs hover:text-white transition-colors">আমাদের সম্পর্কে</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">আইনি নীতি</h4>
+        <ul class="space-y-1.5">
+          <li><a href="privacy-policy.html" class="text-white text-xs font-semibold">🔒 গোপনীয়তা নীতি</a></li>
+          <li><a href="terms.html"          class="text-white/45 text-xs hover:text-white transition-colors">শর্তাবলী</a></li>
+          <li><a href="refund-policy.html"  class="text-white/45 text-xs hover:text-white transition-colors">রিফান্ড নীতি</a></li>
+          <li><a href="faq.html"            class="text-white/45 text-xs hover:text-white transition-colors">সাধারণ প্রশ্ন</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">যোগাযোগ</h4>
+        <p class="text-white/45 text-xs">📞 ০১৯০৮-৫৯৭৪৭০</p>
+        <p class="text-white/45 text-xs mt-1">✉️ privacy@krishibazar.com.bd</p>
+        <p class="text-white/45 text-xs mt-1">📍 রংপুর, বাংলাদেশ</p>
+      </div>
+    </div>
+    <div class="pt-5 text-center">
+      <p class="text-white/30 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/01908597470" target="_blank"
+   class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-xl hover:bg-green-600 hover:scale-110 transition-all z-50">💬</a>
+
+</body>
+</html>

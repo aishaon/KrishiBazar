@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="bn" x-data="dashboardApp()" @scroll.window="scrolled = window.scrollY > 50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>আমার অ্যাকাউন্ট — কৃষি বাজার</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf:  { 50:'#f0faf0',100:'#d6f5d6',200:'#a8e8a8',300:'#74d474',400:'#4ab94a',500:'#2e9c2e',600:'#1e7e1e',700:'#166116',800:'#104810',900:'#0a300a' },
+            earth: { 50:'#fdf8f0',100:'#f5e8d0',200:'#e8cc9e',300:'#d9a96a',400:'#c98840',500:'#b8692a',600:'#9a501e',700:'#7d3c18',800:'#612e14',900:'#4a2410' },
+            cream: '#fdf6e3',
+          },
+          fontFamily: { serif: ['Noto Serif Bengali','serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    *{ font-family:'Hind Siliguri',sans-serif; }
+    h1,h2,h3,h4{ font-family:'Noto Serif Bengali',serif; }
+    body{ background:#fdf6e3; }
+    .nav-glass{ backdrop-filter:blur(16px); }
+    .section-divider{ width:56px;height:4px;background:linear-gradient(90deg,#2e9c2e,#b8692a);border-radius:2px; }
+
+    /* Sidebar */
+    .sidebar-link{
+      display:flex; align-items:center; gap:10px;
+      padding:11px 14px; border-radius:14px; font-size:14px; font-weight:500;
+      color:#6b7280; cursor:pointer; transition:all .2s ease; border:1.5px solid transparent;
+    }
+    .sidebar-link:hover{ background:#f0faf0; color:#1e7e1e; border-color:#d6f5d6; }
+    .sidebar-link.active{ background:linear-gradient(135deg,#1e7e1e,#2e9c2e); color:white; font-weight:700; box-shadow:0 4px 14px rgba(30,126,30,.3); }
+    .sidebar-link.active .link-icon{ filter:brightness(10); }
+
+    /* Stat cards */
+    .stat-card{
+      border-radius:20px; padding:20px;
+      border:1.5px solid #f0faf0; background:white;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .stat-card:hover{ transform:translateY(-4px); box-shadow:0 14px 32px rgba(0,0,0,.09); border-color:#a8e8a8; }
+
+    /* Order status badge */
+    .status-badge{ padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; }
+    .status-processing{ background:#fef3c7; color:#92400e; }
+    .status-shipped    { background:#dbeafe; color:#1e40af; }
+    .status-delivered  { background:#d1fae5; color:#065f46; }
+    .status-cancelled  { background:#fee2e2; color:#991b1b; }
+
+    /* Tab */
+    .tab-btn{ padding:10px 20px; border-radius:14px; font-size:14px; font-weight:600;
+      cursor:pointer; transition:all .2s ease; border:1.5px solid transparent; }
+    .tab-btn.active{ background:linear-gradient(135deg,#1e7e1e,#2e9c2e); color:white; box-shadow:0 4px 14px rgba(30,126,30,.25); }
+    .tab-btn:not(.active){ color:#6b7280; background:white; border-color:#e5e7eb; }
+    .tab-btn:not(.active):hover{ border-color:#a8e8a8; color:#1e7e1e; background:#f0faf0; }
+
+    /* Form */
+    .form-label{ font-size:13px; font-weight:600; color:#104810; margin-bottom:5px; display:block; }
+    .form-input{ width:100%; padding:11px 16px; border-radius:12px; border:2px solid #d6f5d6;
+      background:#f9fffe; font-size:14px; color:#1a1a1a; transition:all .2s; outline:none; }
+    .form-input:focus{ border-color:#1e7e1e; background:white; box-shadow:0 0 0 4px rgba(30,126,30,.08); }
+
+    /* Avatar ring */
+    .avatar-ring{ background:conic-gradient(#1e7e1e 0% 75%, #d6f5d6 75% 100%);
+      border-radius:50%; padding:3px; }
+
+    /* Info card */
+    .info-card{ background:white; border-radius:20px; border:1.5px solid #f0faf0; padding:22px;
+      transition:box-shadow .3s; }
+    .info-card:hover{ box-shadow:0 8px 28px rgba(0,0,0,.07); }
+
+    /* Wishlist card */
+    .wish-card{ background:white; border-radius:16px; overflow:hidden; border:1.5px solid #f0faf0;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1); }
+    .wish-card:hover{ transform:translateY(-4px); box-shadow:0 14px 28px rgba(0,0,0,.1); border-color:#a8e8a8; }
+
+    /* Address card */
+    .addr-card{ background:white; border-radius:18px; border:1.5px solid #f0faf0; padding:18px;
+      transition:all .2s; cursor:pointer; position:relative; }
+    .addr-card:hover{ border-color:#74d474; box-shadow:0 6px 20px rgba(0,0,0,.07); }
+    .addr-card.selected{ border-color:#1e7e1e; background:#f0faf0; }
+
+    /* Progress bar */
+    .loyalty-bar{ height:8px; border-radius:4px; background:#f0faf0; overflow:hidden; }
+    .loyalty-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg,#1e7e1e,#4ab94a); transition:width 1.2s ease; }
+
+    /* Notification toggle */
+    .toggle-switch{ position:relative; width:44px; height:24px; }
+    .toggle-switch input{ opacity:0; width:0; height:0; }
+    .toggle-slider{ position:absolute; inset:0; border-radius:12px; background:#e5e7eb; cursor:pointer; transition:.3s; }
+    .toggle-slider:before{ content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px;
+      background:white; border-radius:50%; transition:.3s; box-shadow:0 2px 4px rgba(0,0,0,.2); }
+    input:checked + .toggle-slider{ background:#1e7e1e; }
+    input:checked + .toggle-slider:before{ transform:translateX(20px); }
+
+    .marquee-track{ display:flex; animation:marquee 28s linear infinite; white-space:nowrap; }
+    @keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes fadeUp{ from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up{ animation:fadeUp .4s ease forwards; }
+    @keyframes slideRight{ from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+    .slide-right{ animation:slideRight .35s ease forwards; }
+    @keyframes popIn{ 0%{transform:scale(.8);opacity:0} 80%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1} }
+    .pop-in{ animation:popIn .45s cubic-bezier(.34,1.56,.64,1) forwards; }
+  </style>
+</head>
+<body class="overflow-x-hidden">
+
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div class="bg-leaf-800 text-white text-xs py-2 overflow-hidden">
+  <div class="marquee-track gap-12">
+    <span class="px-8">👤 আমার অ্যাকাউন্টে স্বাগতম</span>
+    <span class="px-8">🎁 ৫০০ পয়েন্ট = ৳৫০ ছাড়</span>
+    <span class="px-8">🚚 সারা বাংলাদেশে ডেলিভারি</span>
+    <span class="px-8">📞 হেল্পলাইন: ০১৯০৮-৫৯৭৪৭০</span>
+    <span class="px-8">👤 আমার অ্যাকাউন্টে স্বাগতম</span>
+    <span class="px-8">🎁 ৫০০ পয়েন্ট = ৳৫০ ছাড়</span>
+    <span class="px-8">🚚 সারা বাংলাদেশে ডেলিভারি</span>
+    <span class="px-8">📞 হেল্পলাইন: ০১৯০৮-৫৯৭৪৭০</span>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav :class="scrolled?'bg-white/95 shadow-md nav-glass':'bg-white'"
+     class="sticky top-0 z-50 border-b border-leaf-100 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 gap-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-leaf-600 to-leaf-800 flex items-center justify-center shadow"><span class="text-xl">🌿</span></div>
+        <div class="hidden sm:block">
+          <div class="font-serif font-bold text-leaf-800 text-lg leading-none">কৃষি বাজার</div>
+          <div class="text-[10px] text-earth-500 font-medium">দেশের কৃষির অনলাইন হাট</div>
+        </div>
+      </a>
+      <div class="flex-1 max-w-md hidden md:block">
+        <div class="relative">
+          <input type="search" placeholder="পণ্য খুঁজুন..."
+                 class="w-full pl-4 pr-10 py-2.5 rounded-xl border-2 border-leaf-200 bg-leaf-50 focus:outline-none focus:border-leaf-500 text-sm"/>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="cart.html" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+          <span class="text-xl">🛒</span>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">৩</span>
+        </a>
+        <!-- Notification bell -->
+        <button class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-leaf-50 hover:bg-leaf-100 transition-colors">
+          <span class="text-xl">🔔</span>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">২</span>
+        </button>
+        <button @click="showLogoutConfirm=true" class="hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl border border-leaf-200 text-leaf-700 text-sm font-medium hover:bg-leaf-50 transition-colors">
+          🚪 লগআউট
+        </button>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center gap-1 pb-2 text-sm font-medium border-t border-leaf-50 pt-2">
+      <a href="index.html"   class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🏠 হোম</a>
+      <a href="shop.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">🛒 শপ</a>
+      <a href="blog.html"    class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📚 ব্লগ</a>
+      <a href="contact.html" class="px-3 py-1 rounded-lg text-leaf-800 hover:bg-leaf-50">📞 যোগাযোগ</a>
+      <a href="my-account.html" class="px-3 py-1 rounded-lg bg-leaf-600 text-white">👤 আমার অ্যাকাউন্ট</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ BREADCRUMB ══ -->
+<div class="bg-white border-b border-leaf-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-xs text-gray-400">
+    <a href="index.html" class="hover:text-leaf-600">হোম</a><span>›</span>
+    <span class="text-leaf-700 font-medium">আমার অ্যাকাউন্ট</span>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+  <div class="flex gap-8">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="hidden lg:block w-64 shrink-0">
+      <div class="bg-white rounded-2xl border border-leaf-100 overflow-hidden sticky top-[120px]">
+
+        <!-- Profile summary -->
+        <div class="bg-gradient-to-br from-leaf-700 to-leaf-900 p-5 text-white">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="avatar-ring shrink-0">
+              <div class="w-14 h-14 bg-gradient-to-br from-leaf-300 to-leaf-600 rounded-full flex items-center justify-center text-3xl">👩</div>
+            </div>
+            <div>
+              <div class="font-bold text-base" x-text="user.name"></div>
+              <div class="text-white/60 text-xs" x-text="user.email"></div>
+            </div>
+          </div>
+          <!-- Loyalty -->
+          <div class="bg-white/10 rounded-xl p-3">
+            <div class="flex justify-between text-xs mb-1.5">
+              <span class="text-white/70">লয়্যালটি পয়েন্ট</span>
+              <span class="font-bold text-yellow-300" x-text="user.points + ' পয়েন্ট'"></span>
+            </div>
+            <div class="loyalty-bar">
+              <div class="loyalty-fill" :style="'width:'+user.loyaltyProgress+'%'"></div>
+            </div>
+            <div class="text-[10px] text-white/50 mt-1.5" x-text="(500-user.points) + ' পয়েন্ট পেলে ৳৫০ ছাড়'"></div>
+          </div>
+        </div>
+
+        <!-- Nav links -->
+        <div class="p-3 space-y-1">
+          <template x-for="link in navLinks" :key="link.id">
+            <button @click="activeTab=link.id"
+                    :class="activeTab===link.id?'active':''"
+                    class="sidebar-link w-full text-left">
+              <span class="link-icon text-lg shrink-0" x-text="link.icon"></span>
+              <span x-text="link.label"></span>
+              <span x-show="link.badge" class="ml-auto bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center" x-text="link.badge"></span>
+            </button>
+          </template>
+          <!-- Logout -->
+          <button @click="showLogoutConfirm=true"
+                  class="sidebar-link w-full text-left text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 mt-2">
+            <span class="text-lg">🚪</span> লগআউট
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── CONTENT ── -->
+    <div class="flex-1 min-w-0">
+
+      <!-- Mobile tab bar -->
+      <div class="lg:hidden flex gap-2 overflow-x-auto pb-3 mb-5">
+        <template x-for="link in navLinks" :key="link.id">
+          <button @click="activeTab=link.id"
+                  :class="activeTab===link.id?'active':''"
+                  class="tab-btn shrink-0 flex items-center gap-1.5 text-sm py-2 px-3">
+            <span x-text="link.icon"></span>
+            <span x-text="link.label"></span>
+          </button>
+        </template>
+      </div>
+
+      <!-- ══ DASHBOARD TAB ══ -->
+      <div x-show="activeTab==='dashboard'" class="fade-up space-y-6">
+        <div>
+          <div class="section-divider mb-3"></div>
+          <h1 class="text-2xl font-black text-leaf-900">স্বাগতম, <span x-text="user.name.split(' ')[0]"></span>! 👋</h1>
+          <p class="text-gray-400 text-sm mt-1">আপনার অ্যাকাউন্টের সারসংক্ষেপ দেখুন।</p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="stat-card text-center">
+            <div class="text-3xl mb-2">📦</div>
+            <div class="text-2xl font-black text-leaf-700" x-text="stats.totalOrders"></div>
+            <div class="text-xs text-gray-400 mt-1">মোট অর্ডার</div>
+          </div>
+          <div class="stat-card text-center">
+            <div class="text-3xl mb-2">✅</div>
+            <div class="text-2xl font-black text-leaf-700" x-text="stats.delivered"></div>
+            <div class="text-xs text-gray-400 mt-1">ডেলিভারি হয়েছে</div>
+          </div>
+          <div class="stat-card text-center">
+            <div class="text-3xl mb-2">❤️</div>
+            <div class="text-2xl font-black text-earth-600" x-text="stats.wishlist"></div>
+            <div class="text-xs text-gray-400 mt-1">উইশলিস্ট</div>
+          </div>
+          <div class="stat-card text-center">
+            <div class="text-3xl mb-2">💰</div>
+            <div class="text-2xl font-black text-earth-600" x-text="'৳'+stats.totalSpent.toLocaleString()"></div>
+            <div class="text-xs text-gray-400 mt-1">মোট খরচ</div>
+          </div>
+        </div>
+
+        <!-- Recent Orders quick view -->
+        <div class="info-card">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-black text-leaf-900 text-lg">সাম্প্রতিক অর্ডার</h2>
+            <button @click="activeTab='orders'" class="text-xs text-leaf-600 hover:text-leaf-800 font-semibold">সব দেখুন →</button>
+          </div>
+          <div class="space-y-3">
+            <template x-for="order in orders.slice(0,3)" :key="order.id">
+              <div class="flex items-center gap-4 p-3 rounded-xl hover:bg-leaf-50 transition-colors">
+                <div class="w-12 h-12 bg-gradient-to-br from-leaf-50 to-leaf-200 rounded-xl flex items-center justify-center text-2xl shrink-0" x-text="order.icon"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-leaf-900 text-sm" x-text="order.id"></div>
+                  <div class="text-xs text-gray-400 mt-0.5" x-text="order.date + ' • ' + order.items + 'টি পণ্য'"></div>
+                </div>
+                <div>
+                  <div class="status-badge" :class="'status-'+order.statusKey" x-text="order.status"></div>
+                  <div class="font-bold text-earth-700 text-sm mt-1 text-right" x-text="'৳'+order.total.toLocaleString()"></div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Loyalty Card -->
+        <div class="bg-gradient-to-br from-earth-600 to-earth-800 rounded-2xl p-5 text-white">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="text-3xl mb-2">🎖️</div>
+              <h3 class="font-black text-xl mb-1">লয়্যালটি প্রোগ্রাম</h3>
+              <p class="text-white/70 text-xs mb-3">প্রতি ১০০ টাকা কেনাকাটায় ১০ পয়েন্ট। ৫০০ পয়েন্টে ৳৫০ ছাড়!</p>
+              <div class="bg-white/15 rounded-xl px-4 py-2 inline-block">
+                <span class="font-black text-yellow-300 text-2xl" x-text="user.points"></span>
+                <span class="text-white/70 text-sm ml-1">পয়েন্ট</span>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-xs text-white/60 mb-1">আপনার স্তর</div>
+              <div class="bg-yellow-400 text-yellow-900 font-black px-3 py-1.5 rounded-xl text-sm" x-text="user.tier"></div>
+              <div class="text-xs text-white/50 mt-2" x-text="'পরের স্তরে: '+(user.nextTierPoints-user.points)+' পয়েন্ট'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ORDERS TAB ══ -->
+      <div x-show="activeTab==='orders'" class="fade-up space-y-5">
+        <div>
+          <div class="section-divider mb-3"></div>
+          <h1 class="text-2xl font-black text-leaf-900">আমার অর্ডারসমূহ</h1>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="flex gap-2 flex-wrap">
+          <template x-for="f in orderFilters" :key="f.id">
+            <button @click="orderFilter=f.id"
+                    :class="orderFilter===f.id?'bg-leaf-600 text-white shadow-md':'bg-white border border-leaf-200 text-leaf-700 hover:bg-leaf-50'"
+                    class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all">
+              <span x-text="f.label"></span>
+            </button>
+          </template>
+        </div>
+
+        <div class="space-y-4">
+          <template x-for="order in filteredOrders" :key="order.id">
+            <div class="info-card">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-leaf-50">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-leaf-50 rounded-xl flex items-center justify-center text-2xl shrink-0" x-text="order.icon"></div>
+                  <div>
+                    <div class="font-bold text-leaf-900 text-sm" x-text="order.id"></div>
+                    <div class="text-xs text-gray-400" x-text="order.date"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="status-badge" :class="'status-'+order.statusKey" x-text="order.status"></span>
+                  <span class="font-black text-earth-700" x-text="'৳'+order.total.toLocaleString()"></span>
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mb-3" x-text="order.items + 'টি পণ্য — ' + order.preview"></p>
+              <div class="flex flex-wrap gap-2">
+                <a href="order-tracking.html" class="text-xs bg-leaf-50 text-leaf-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-leaf-100 transition-colors border border-leaf-200">🔍 ট্র্যাক করুন</a>
+                <button class="text-xs bg-white text-gray-600 font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">🖨️ রিসিট</button>
+                <button x-show="order.statusKey==='delivered'" class="text-xs bg-earth-50 text-earth-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-earth-100 transition-colors border border-earth-200">🔄 আবার কিনুন</button>
+                <button x-show="order.statusKey==='delivered'" class="text-xs bg-blue-50 text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">⭐ রিভিউ দিন</button>
+              </div>
+            </div>
+          </template>
+          <div x-show="filteredOrders.length===0" class="text-center py-12">
+            <div class="text-6xl mb-3">📦</div>
+            <p class="text-gray-400 text-sm">এই ক্যাটাগরিতে কোনো অর্ডার নেই।</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ WISHLIST TAB ══ -->
+      <div x-show="activeTab==='wishlist'" class="fade-up space-y-5">
+        <div>
+          <div class="section-divider mb-3"></div>
+          <h1 class="text-2xl font-black text-leaf-900">আমার উইশলিস্ট <span class="text-base font-normal text-gray-400">(<span x-text="wishlist.length"></span>)</span></h1>
+        </div>
+        <div x-show="wishlist.length===0" class="text-center py-16">
+          <div class="text-7xl mb-4">🤍</div>
+          <h3 class="font-black text-leaf-900 text-xl mb-2">উইশলিস্ট খালি</h3>
+          <p class="text-gray-400 text-sm mb-5">পছন্দের পণ্য যোগ করুন।</p>
+          <a href="shop.html" class="px-6 py-3 bg-leaf-600 text-white rounded-xl text-sm font-bold hover:bg-leaf-700 transition-colors">🛒 শপে যান</a>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <template x-for="(item, idx) in wishlist" :key="item.id">
+            <div class="wish-card group">
+              <div class="h-32 bg-gradient-to-br from-leaf-50 to-leaf-200 flex items-center justify-center overflow-hidden relative">
+                <span class="text-5xl group-hover:scale-110 transition-transform duration-300" x-text="item.icon"></span>
+                <button @click="wishlist.splice(idx,1)"
+                        class="absolute top-2 right-2 w-7 h-7 bg-white/80 rounded-full flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-bold opacity-0 group-hover:opacity-100">✕</button>
+              </div>
+              <div class="p-3">
+                <h3 class="font-semibold text-leaf-900 text-xs leading-snug mb-1" x-text="item.name"></h3>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-bold text-earth-700 text-sm" x-text="'৳'+item.price"></span>
+                  <span class="text-yellow-400 text-xs">★ <span class="text-gray-400" x-text="item.rating"></span></span>
+                </div>
+                <button class="w-full py-1.5 bg-gradient-to-r from-leaf-700 to-leaf-500 text-white text-xs font-bold rounded-xl hover:opacity-90 transition-opacity">
+                  🛒 কার্টে যোগ করুন
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ══ ADDRESSES TAB ══ -->
+      <div x-show="activeTab==='addresses'" class="fade-up space-y-5" x-data="{addingNew:false, newAddr:{name:'',phone:'',address:'',district:'',type:'বাড়ি'}}">
+        <div class="flex items-end justify-between">
+          <div>
+            <div class="section-divider mb-3"></div>
+            <h1 class="text-2xl font-black text-leaf-900">আমার ঠিকানাসমূহ</h1>
+          </div>
+          <button @click="addingNew=!addingNew" class="flex items-center gap-1.5 px-4 py-2 bg-leaf-600 text-white rounded-xl text-sm font-bold hover:bg-leaf-700 transition-colors">
+            + নতুন ঠিকানা
+          </button>
+        </div>
+
+        <!-- Add new form -->
+        <div x-show="addingNew" x-transition class="info-card border-leaf-300">
+          <h3 class="font-bold text-leaf-900 mb-4">নতুন ঠিকানা যোগ করুন</h3>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="form-label">নাম *</label><input x-model="newAddr.name" type="text" placeholder="প্রাপকের নাম" class="form-input"/></div>
+            <div><label class="form-label">ফোন *</label><input x-model="newAddr.phone" type="tel" placeholder="০১XXXXXXXXX" class="form-input"/></div>
+            <div class="sm:col-span-2"><label class="form-label">পূর্ণ ঠিকানা *</label><textarea x-model="newAddr.address" rows="2" placeholder="বাসা, রোড, এলাকা..." class="form-input resize-none"></textarea></div>
+            <div>
+              <label class="form-label">ঠিকানার ধরন</label>
+              <div class="flex gap-2">
+                <template x-for="t in ['বাড়ি','অফিস','অন্যান্য']">
+                  <button @click="newAddr.type=t" :class="newAddr.type===t?'bg-leaf-600 text-white':'bg-white border border-leaf-200 text-leaf-700 hover:bg-leaf-50'" class="flex-1 py-2 rounded-xl text-xs font-semibold transition-colors" x-text="t"></button>
+                </template>
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-3 mt-4">
+            <button @click="addresses.push({...newAddr,id:addresses.length+1,default:false});addingNew=false;newAddr={name:'',phone:'',address:'',district:'',type:'বাড়ি'}" class="px-5 py-2.5 bg-leaf-600 text-white rounded-xl text-sm font-bold hover:bg-leaf-700 transition-colors">সংরক্ষণ করুন</button>
+            <button @click="addingNew=false" class="px-5 py-2.5 border border-gray-200 text-gray-500 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">বাতিল</button>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <template x-for="(addr, idx) in addresses" :key="addr.id">
+            <div class="addr-card" :class="addr.default?'selected':''">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg" x-text="addr.type==='বাড়ি'?'🏠':(addr.type==='অফিস'?'🏢':'📍')"></span>
+                  <span class="font-bold text-leaf-900 text-sm" x-text="addr.type"></span>
+                  <span x-show="addr.default" class="text-[10px] bg-leaf-600 text-white font-bold px-2 py-0.5 rounded-full">ডিফল্ট</span>
+                </div>
+                <button @click="addresses.splice(idx,1)" class="text-red-400 hover:text-red-600 text-sm font-bold transition-colors">✕</button>
+              </div>
+              <p class="font-semibold text-leaf-900 text-sm" x-text="addr.name"></p>
+              <p class="text-gray-500 text-xs mt-0.5" x-text="addr.phone"></p>
+              <p class="text-gray-500 text-xs mt-1 leading-relaxed" x-text="addr.address"></p>
+              <div class="flex gap-2 mt-3">
+                <button x-show="!addr.default" @click="addresses.forEach(a=>a.default=false); addr.default=true"
+                        class="text-xs text-leaf-600 font-semibold border border-leaf-200 px-2.5 py-1.5 rounded-lg hover:bg-leaf-50 transition-colors">ডিফল্ট করুন</button>
+                <button class="text-xs text-gray-500 font-semibold border border-gray-200 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">সম্পাদন</button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ══ PROFILE TAB ══ -->
+      <div x-show="activeTab==='profile'" class="fade-up space-y-6" x-data="{editing:false, saved:false, pw:{old:'',new:'',confirm:''}}">
+        <div>
+          <div class="section-divider mb-3"></div>
+          <h1 class="text-2xl font-black text-leaf-900">প্রোফাইল সম্পাদনা</h1>
+        </div>
+
+        <!-- Avatar -->
+        <div class="info-card flex items-center gap-5">
+          <div class="relative shrink-0">
+            <div class="w-20 h-20 bg-gradient-to-br from-leaf-300 to-leaf-600 rounded-2xl flex items-center justify-center text-5xl shadow-lg">👩</div>
+            <button class="absolute -bottom-1 -right-1 w-7 h-7 bg-leaf-600 text-white rounded-full flex items-center justify-center text-xs hover:bg-leaf-700 transition-colors shadow-md">✏️</button>
+          </div>
+          <div>
+            <h3 class="font-bold text-leaf-900 text-lg" x-text="user.name"></h3>
+            <p class="text-gray-400 text-sm" x-text="user.email"></p>
+            <p class="text-xs text-leaf-600 font-semibold mt-1">সদস্য হওয়ার তারিখ: মার্চ, ২০২৩</p>
+          </div>
+        </div>
+
+        <!-- Profile Form -->
+        <div class="info-card">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="font-bold text-leaf-900">ব্যক্তিগত তথ্য</h3>
+            <button @click="editing=!editing" class="text-sm text-leaf-600 hover:text-leaf-800 font-semibold border border-leaf-200 px-3 py-1.5 rounded-xl hover:bg-leaf-50 transition-colors">
+              <span x-text="editing?'বাতিল':'✏️ সম্পাদন করুন'"></span>
+            </button>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">পূর্ণ নাম</label>
+              <input x-model="user.name" :disabled="!editing" type="text" class="form-input disabled:opacity-60 disabled:cursor-not-allowed"/>
+            </div>
+            <div>
+              <label class="form-label">মোবাইল নম্বর</label>
+              <input x-model="user.phone" :disabled="!editing" type="tel" class="form-input disabled:opacity-60 disabled:cursor-not-allowed"/>
+            </div>
+            <div>
+              <label class="form-label">ইমেইল</label>
+              <input x-model="user.email" :disabled="!editing" type="email" class="form-input disabled:opacity-60 disabled:cursor-not-allowed"/>
+            </div>
+            <div>
+              <label class="form-label">জন্ম তারিখ</label>
+              <input x-model="user.dob" :disabled="!editing" type="date" class="form-input disabled:opacity-60 disabled:cursor-not-allowed"/>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="form-label">লিঙ্গ</label>
+              <div class="flex gap-3">
+                <template x-for="g in ['পুরুষ','মহিলা','অন্যান্য']">
+                  <button @click="editing && (user.gender=g)"
+                          :class="user.gender===g?'bg-leaf-600 text-white border-leaf-600':'bg-white border-leaf-200 text-leaf-700'"
+                          class="flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-colors"
+                          :disabled="!editing" x-text="g"></button>
+                </template>
+              </div>
+            </div>
+          </div>
+          <div x-show="editing" class="flex gap-3 mt-4">
+            <button @click="editing=false;saved=true;setTimeout(()=>saved=false,2500)"
+                    class="px-6 py-2.5 bg-leaf-600 text-white rounded-xl text-sm font-bold hover:bg-leaf-700 transition-colors">সংরক্ষণ করুন</button>
+          </div>
+          <div x-show="saved" x-transition class="mt-3 bg-leaf-50 text-leaf-700 text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 pop-in">
+            ✅ প্রোফাইল আপডেট হয়েছে!
+          </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="info-card">
+          <h3 class="font-bold text-leaf-900 mb-4">🔒 পাসওয়ার্ড পরিবর্তন</h3>
+          <div class="space-y-4 max-w-md">
+            <div><label class="form-label">পুরনো পাসওয়ার্ড</label><input x-model="pw.old" type="password" placeholder="••••••••" class="form-input"/></div>
+            <div><label class="form-label">নতুন পাসওয়ার্ড</label><input x-model="pw.new" type="password" placeholder="••••••••" class="form-input"/></div>
+            <div><label class="form-label">পাসওয়ার্ড নিশ্চিত করুন</label><input x-model="pw.confirm" type="password" placeholder="••••••••" class="form-input"/></div>
+            <button class="px-6 py-2.5 bg-earth-600 text-white rounded-xl text-sm font-bold hover:bg-earth-700 transition-colors">পাসওয়ার্ড পরিবর্তন করুন</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ NOTIFICATIONS TAB ══ -->
+      <div x-show="activeTab==='notifications'" class="fade-up space-y-5">
+        <div>
+          <div class="section-divider mb-3"></div>
+          <h1 class="text-2xl font-black text-leaf-900">বিজ্ঞপ্তি সেটিংস</h1>
+        </div>
+
+        <div class="info-card space-y-5">
+          <h3 class="font-bold text-leaf-900 mb-1">📱 SMS বিজ্ঞপ্তি</h3>
+          <template x-for="notif in notifications.filter(n=>n.type==='sms')" :key="notif.id">
+            <div class="flex items-center justify-between py-3 border-b border-leaf-50">
+              <div>
+                <div class="font-semibold text-leaf-900 text-sm" x-text="notif.label"></div>
+                <div class="text-xs text-gray-400 mt-0.5" x-text="notif.desc"></div>
+              </div>
+              <label class="toggle-switch shrink-0">
+                <input type="checkbox" x-model="notif.enabled"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </template>
+
+          <h3 class="font-bold text-leaf-900 mb-1 pt-2">✉️ ইমেইল বিজ্ঞপ্তি</h3>
+          <template x-for="notif in notifications.filter(n=>n.type==='email')" :key="notif.id">
+            <div class="flex items-center justify-between py-3 border-b border-leaf-50">
+              <div>
+                <div class="font-semibold text-leaf-900 text-sm" x-text="notif.label"></div>
+                <div class="text-xs text-gray-400 mt-0.5" x-text="notif.desc"></div>
+              </div>
+              <label class="toggle-switch shrink-0">
+                <input type="checkbox" x-model="notif.enabled"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </template>
+          <button class="px-5 py-2.5 bg-leaf-600 text-white rounded-xl text-sm font-bold hover:bg-leaf-700 transition-colors mt-2">সেটিং সংরক্ষণ করুন</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ══ LOGOUT CONFIRM ══ -->
+<div x-show="showLogoutConfirm" x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
+     @click.self="showLogoutConfirm=false">
+  <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl pop-in text-center">
+    <div class="text-5xl mb-4">🚪</div>
+    <h3 class="font-black text-leaf-900 text-xl mb-2">লগআউট করবেন?</h3>
+    <p class="text-gray-400 text-sm mb-5">আপনি কি নিশ্চিতভাবে অ্যাকাউন্ট থেকে বের হতে চান?</p>
+    <div class="flex gap-3">
+      <button @click="showLogoutConfirm=false" class="flex-1 py-3 border-2 border-gray-200 text-gray-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors">বাতিল</button>
+      <a href="login.html" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 transition-colors text-center">লগআউট</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer class="bg-leaf-900 text-white pt-10 pb-6 mt-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-xl">🌿</div>
+          <div class="font-serif font-bold">কৃষি বাজার</div>
+        </div>
+        <p class="text-white/40 text-xs leading-relaxed">২০১৭ সাল থেকে বাংলাদেশের কৃষকদের পাশে।</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">পেজসমূহ</h4>
+        <ul class="space-y-1.5">
+          <li><a href="index.html" class="text-white/45 text-xs hover:text-white transition-colors">হোম</a></li>
+          <li><a href="shop.html"  class="text-white/45 text-xs hover:text-white transition-colors">শপ</a></li>
+          <li><a href="blog.html"  class="text-white/45 text-xs hover:text-white transition-colors">ব্লগ</a></li>
+          <li><a href="about.html" class="text-white/45 text-xs hover:text-white transition-colors">আমাদের সম্পর্কে</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">সাপোর্ট</h4>
+        <ul class="space-y-1.5">
+          <li><a href="faq.html"           class="text-white/45 text-xs hover:text-white transition-colors">সাধারণ প্রশ্ন</a></li>
+          <li><a href="refund-policy.html" class="text-white/45 text-xs hover:text-white transition-colors">রিফান্ড নীতি</a></li>
+          <li><a href="terms.html"         class="text-white/45 text-xs hover:text-white transition-colors">শর্তাবলী</a></li>
+          <li><a href="contact.html"       class="text-white/45 text-xs hover:text-white transition-colors">যোগাযোগ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3 text-sm">যোগাযোগ</h4>
+        <p class="text-white/45 text-xs">📞 ০১৯০৮-৫৯৭৪৭০</p>
+        <p class="text-white/45 text-xs mt-1">✉️ info@krishibazar.com.bd</p>
+      </div>
+    </div>
+    <div class="pt-5 text-center"><p class="text-white/30 text-xs">© ২০২৬ কৃষি বাজার। সর্বস্বত্ব সংরক্ষিত।</p></div>
+  </div>
+</footer>
+
+<a href="https://wa.me/01908597470" target="_blank"
+   class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-xl hover:bg-green-600 hover:scale-110 transition-all z-50">💬</a>
+
+<script>
+function dashboardApp() {
+  return {
+    scrolled: false,
+    activeTab: 'dashboard',
+    orderFilter: 'all',
+    showLogoutConfirm: false,
+
+    user: {
+      name: 'রহিমা বেগম',
+      email: 'rahima@example.com',
+      phone: '০১৭১২-৩৪৫৬৭৮',
+      dob: '1990-06-15',
+      gender: 'মহিলা',
+      points: 340,
+      tier: '🥈 সিলভার',
+      nextTierPoints: 500,
+      loyaltyProgress: 68,
+    },
+
+    stats: { totalOrders:12, delivered:10, wishlist:5, totalSpent:14250 },
+
+    navLinks: [
+      { id:'dashboard',     icon:'🏠', label:'ড্যাশবোর্ড',      badge:null },
+      { id:'orders',        icon:'📦', label:'আমার অর্ডার',      badge:'২' },
+      { id:'wishlist',      icon:'❤️', label:'উইশলিস্ট',         badge:'৫' },
+      { id:'addresses',     icon:'📍', label:'ঠিকানাসমূহ',       badge:null },
+      { id:'profile',       icon:'👤', label:'প্রোফাইল',          badge:null },
+      { id:'notifications', icon:'🔔', label:'বিজ্ঞপ্তি',         badge:'২' },
+    ],
+
+    orders: [
+      { id:'#KB847293', icon:'🍯', date:'২৮ এপ্রিল, ২০২৬', items:3, preview:'মধু, জৈব সার, মুরগি', total:1170, status:'পথে আছে',        statusKey:'shipped' },
+      { id:'#KB712045', icon:'🍅', date:'২০ এপ্রিল, ২০২৬', items:2, preview:'টমেটো বীজ, মাশরুম',    total:830,  status:'ডেলিভারি হয়েছে', statusKey:'delivered' },
+      { id:'#KB654321', icon:'🐓', date:'১৫ এপ্রিল, ২০২৬', items:1, preview:'দেশি মুরগি',            total:380,  status:'ডেলিভারি হয়েছে', statusKey:'delivered' },
+      { id:'#KB589012', icon:'🌿', date:'১০ এপ্রিল, ২০২৬', items:4, preview:'জৈব সার প্যাকেজ',       total:720,  status:'প্রক্রিয়াধীন',    statusKey:'processing' },
+      { id:'#KB423001', icon:'💧', date:'২ এপ্রিল, ২০২৬',  items:1, preview:'ড্রিপ সেচ সিস্টেম',     total:2200, status:'বাতিল',            statusKey:'cancelled' },
+    ],
+
+    orderFilters: [
+      { id:'all',        label:'সব' },
+      { id:'processing', label:'প্রক্রিয়াধীন' },
+      { id:'shipped',    label:'পাঠানো হয়েছে' },
+      { id:'delivered',  label:'ডেলিভারি হয়েছে' },
+      { id:'cancelled',  label:'বাতিল' },
+    ],
+
+    get filteredOrders() {
+      if (this.orderFilter === 'all') return this.orders;
+      return this.orders.filter(o => o.statusKey === this.orderFilter);
+    },
+
+    wishlist: [
+      { id:1, name:'হাইব্রিড টমেটো বীজ',     icon:'🍅', price:95,  rating:4.6 },
+      { id:2, name:'সুন্দরবনের খাঁটি মধু',    icon:'🍯', price:650, rating:5.0 },
+      { id:3, name:'রানিং পাম্প (১HP)',         icon:'⚙️', price:5800,rating:4.5 },
+      { id:4, name:'ছাদ বাগানের মাটি',         icon:'🪴', price:320, rating:4.5 },
+      { id:5, name:'মাশরুম স্পন প্যাকেজ',     icon:'🍄', price:350, rating:4.7 },
+    ],
+
+    addresses: [
+      { id:1, type:'বাড়ি',  name:'রহিমা বেগম', phone:'০১৭১২-৩৪৫৬৭৮', address:'বাসা ১২, রোড ৫, মিরপুর-১০, ঢাকা - ১২১৬', default:true },
+      { id:2, type:'অফিস', name:'রহিমা বেগম', phone:'০১৭১২-৩৪৫৬৭৮', address:'বিটিআই সেন্টার, কারওয়ান বাজার, ঢাকা - ১২১৫', default:false },
+    ],
+
+    notifications: [
+      { id:1, type:'sms',   label:'অর্ডার নিশ্চিতকরণ',    desc:'অর্ডার দেওয়ার পর SMS পান',          enabled:true },
+      { id:2, type:'sms',   label:'ডেলিভারি আপডেট',        desc:'পণ্য পাঠানোর সময় SMS পান',          enabled:true },
+      { id:3, type:'sms',   label:'বিশেষ অফার',             desc:'নতুন ডিল ও ছাড়ের SMS পান',          enabled:false },
+      { id:4, type:'email', label:'সাপ্তাহিক নিউজলেটার',   desc:'কৃষি টিপস ও নতুন পণ্যের আপডেট',    enabled:true },
+      { id:5, type:'email', label:'অর্ডার রিসিট',           desc:'প্রতিটি অর্ডারের ইমেইল রিসিট পান', enabled:true },
+      { id:6, type:'email', label:'মূল্য হ্রাসের বিজ্ঞপ্তি', desc:'উইশলিস্ট পণ্যের দাম কমলে জানান', enabled:true },
+    ],
+  }
+}
+</script>
+</body>
+</html>
